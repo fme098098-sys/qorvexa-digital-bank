@@ -41,3 +41,39 @@
     </section>
   </div>
 </div>
+<section class="card" id="sign-ins">
+  <div class="card-head"><h3><%- icon('shield') %> Recent sign-ins</h3><span class="muted small">If you don't recognise a sign-in, change your password and sign out other sessions.</span></div>
+  <div class="page-grid even">
+    <div>
+      <div class="table-wrap"><table class="table compact">
+        <thead><tr><th>Time</th><th>Device</th><th>IP address</th><th>Result</th></tr></thead>
+        <tbody>
+          <% signIns.forEach(function (e) { %>
+            <tr class="<%= e.success ? '' : 'row-failed' %>">
+              <td class="small nowrap"><%= fmt.formatDateTime(e.created_at) %></td>
+              <td class="small"><%= e.browser || 'Unknown browser' %> on <%= e.os || 'unknown OS' %> <span class="muted">· <%= fmt.titleCase(e.event === 'login' ? (e.device_type || 'unknown') : e.event) %></span>
+                <% if (e.is_new_device) { %><span class="status-pill status-new-device">New device</span><% } %></td>
+              <td class="mono small"><%= e.ip || '—' %></td>
+              <td><% if (e.success) { %><span class="status-pill status-active">OK</span><% } else { %><span class="status-pill status-suspended">Failed</span><% } %></td>
+            </tr>
+          <% }) %>
+          <% if (!signIns.length) { %><tr><td colspan="4" class="muted center">No sign-in activity yet.</td></tr><% } %>
+        </tbody>
+      </table></div>
+    </div>
+    <div>
+      <h4>Active sessions</h4>
+      <ul class="req-list session-list">
+        <% sessions.forEach(function (s) { %>
+          <li><div><strong><%= s.browser || 'Unknown browser' %> on <%= s.os || 'unknown OS' %></strong> <% if (s.sid === currentSid) { %><span class="status-pill status-active">This device</span><% } %>
+            <small class="muted">IP <span class="mono"><%= s.ip || '—' %></span> · signed in <%= s.signed_in_at ? fmt.formatDateTime(s.signed_in_at) : 'before sign-in tracking was enabled' %></small></div></li>
+        <% }) %>
+        <% if (!sessions.length) { %><li class="muted">No active sessions.</li><% } %>
+      </ul>
+      <form method="post" action="/profile/sessions/revoke-others" class="form" data-confirm="Sign out of all other devices?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-navy" type="submit" <%= sessions.filter(function (s) { return s.sid !== currentSid; }).length ? '' : 'disabled' %>><%- icon('logout') %> Sign out other sessions</button>
+      </form>
+    </div>
+  </div>
+</section>

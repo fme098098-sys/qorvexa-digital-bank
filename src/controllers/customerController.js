@@ -1,6 +1,9 @@
 'use strict';
 const { body } = require('express-validator');
+const db = require('../db/pool');
 const users = require('../services/userService');
+const audit = require('../services/auditService');
+const loginEvents = require('../services/loginEventService');
 const txs = require('../services/transactionService');
 const notifications = require('../services/notificationService');
 const beneficiaries = require('../services/beneficiaryService');
@@ -110,14 +113,28 @@ exports.statementPdf = async (req, res) => {
 };
 
 // ---------------------------------------------------------------- profile
+async function securityData(req) {
+  const [signIns, sessions] = await Promise.all([loginEvents.forUser(req.user.id, 10), loginEvents.activeSessions('user', req.user.id)]);
+  return { signIns, sessions, currentSid: req.sessionID };
+}
 exports.profile = async (req, res) => {
   const account = await users.getPrimaryAccount(req.user.id);
-  res.render('customer/profile', { title: 'Profile settings', layout: 'layouts/app', account, countries: COUNTRIES, form: req.user, pwErrors: [] });
+  res.render('customer/profile', { title: 'Profile settings', layout: 'layouts/app', account, countries: COUNTRIES, form: req.user, pwErrors: [], ...(await securityData(req)) });
+};
+exports.revokeOtherSessions = async (req, res) => {
+  const ended = await db.withTransaction(async (client) => {
+    const n = await loginEvents.revokeUserSessions(req.user.id, { exceptSid: req.sessionID }, client);
+    await loginEvents.record({ actorType: 'user', userId: req.user.id, identifier: req.user.username, event: 'sessions_revoked', success: true, req, sessionId: req.sessionID }, client);
+    await audit.log({ actorType: 'user', actorId: req.user.id, actorLabel: req.user.username, action: 'user.sessions_revoked', details: { sessions_ended: n }, req }, client);
+    return n;
+  });
+  flash(req, 'success', ended ? `Signed out of ${ended} other session${ended === 1 ? '' : 's'}.` : 'No other active sessions were found.');
+  res.redirect('/profile#sign-ins');
 };
 exports.profileValidators = [...profileFields, collect];
 exports.updateProfile = async (req, res) => {
   const account = await users.getPrimaryAccount(req.user.id);
-  const render = (errors, status) => res.status(status).render('customer/profile', { title: 'Profile settings', layout: 'layouts/app', account, countries: COUNTRIES, form: { ...req.user, full_name: req.body.fullName, email: req.body.email, phone: req.body.phone, country: req.body.country }, errors, pwErrors: [] });
+  const render = async (errors, status) => res.status(status).render('customer/profile', { title: 'Profile settings', layout: 'layouts/app', account, countries: COUNTRIES, form: { ...req.user, full_name: req.body.fullName, email: req.body.email, phone: req.body.phone, country: req.body.country }, errors, pwErrors: [], ...(await securityData(req)) });
   if (req.validationErrors.length) return render(req.validationErrors, 422);
   try {
     await users.updateProfile(req.user.id, req.body, { type: 'user', id: req.user.id, label: req.user.username }, req);
@@ -136,7 +153,7 @@ exports.passwordValidators = [
 ];
 exports.changePassword = async (req, res) => {
   const account = await users.getPrimaryAccount(req.user.id);
-  const render = (pwErrors, status) => res.status(status).render('customer/profile', { title: 'Profile settings', layout: 'layouts/app', account, countries: COUNTRIES, form: req.user, pwErrors });
+  const render = async (pwErrors, status) => res.status(status).render('customer/profile', { title: 'Profile settings', layout: 'layouts/app', account, countries: COUNTRIES, form: req.user, pwErrors, ...(await securityData(req)) });
   if (req.validationErrors.length) return render(req.validationErrors, 422);
   try {
     await users.changePassword(req.user.id, req.body.currentPassword, req.body.newPassword, req);

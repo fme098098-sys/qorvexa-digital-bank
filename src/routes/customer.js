@@ -31,6 +31,7 @@ router.get('/statements/download', U, c.statementPdf);
 router.get('/profile', U, c.profile);
 router.post('/profile', U, c.profileValidators, c.updateProfile);
 router.post('/profile/password', U, sensitiveLimiter, c.passwordValidators, c.changePassword);
+router.post('/profile/sessions/revoke-others', U, sensitiveLimiter, c.revokeOtherSessions);
 
 router.get('/notifications', U, c.notifications);
 router.post('/notifications/read-all', U, c.markAllRead);
