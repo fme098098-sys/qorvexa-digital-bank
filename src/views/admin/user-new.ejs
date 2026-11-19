@@ -1,0 +1,25 @@
+<section class="card narrow-card wide">
+  <div class="card-head"><h3><%- icon('user-plus') %> Create customer account</h3><a href="/admin/users" class="link">Back to users</a></div>
+  <%- include('../partials/errors') %>
+  <form method="post" action="/admin/users" class="form" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="grid-2">
+      <label class="field"><span>Full name</span><input name="fullName" required maxlength="120" value="<%= form.fullName || '' %>"></label>
+      <label class="field"><span>Email address</span><input type="email" name="email" required maxlength="254" value="<%= form.email || '' %>"></label>
+    </div>
+    <div class="grid-2">
+      <label class="field"><span>Phone number</span><input name="phone" required maxlength="20" value="<%= form.phone || '' %>"></label>
+      <label class="field"><span>Username</span><input name="username" required maxlength="32" value="<%= form.username || '' %>"></label>
+    </div>
+    <div class="grid-2">
+      <label class="field"><span>Country</span><select name="country"><option value="">Select country</option><% countries.forEach(function (c) { %><option value="<%= c %>" <%= form.country === c ? 'selected' : '' %>><%= c %></option><% }) %></select></label>
+      <label class="field"><span>Account type</span><select name="accountType"><% ['checking','savings','business'].forEach(function (t) { %><option value="<%= t %>" <%= form.accountType === t ? 'selected' : '' %>><%= fmt.titleCase(t) %></option><% }) %></select></label>
+    </div>
+    <div class="grid-2">
+      <label class="field"><span>Temporary password</span><input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
+      <label class="field"><span>Opening deposit (USD, optional)</span><div class="input-group money"><b>$</b><input name="openingDeposit" inputmode="decimal" value="<%= form.openingDeposit || '' %>" placeholder="0.00"></div></label>
+    </div>
+    <p class="hint"><%- icon('info') %> An opening deposit is posted as an approved, ledgered deposit request in your name and recorded in the audit log.</p>
+    <button type="submit" class="btn btn-primary"><%- icon('user-plus') %> Create customer</button>
+  </form>
+</section>

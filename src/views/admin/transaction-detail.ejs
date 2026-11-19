@@ -1,0 +1,33 @@
+<section class="card">
+  <div class="card-head"><h3>Transaction <span class="mono"><%= legs[0].reference %></span></h3><a class="link" href="/admin/transactions">Back to transactions</a></div>
+  <p class="hint"><%- icon('lock') %> Ledger entries are immutable. They cannot be edited or deleted by any user, including administrators.</p>
+  <div class="legs">
+    <% legs.forEach(function (t) { %>
+      <div class="leg leg-<%= t.direction %>">
+        <h4><%= t.direction === 'debit' ? 'Debit leg' : 'Credit leg' %> · <%= TYPE_LABELS[t.type] %></h4>
+        <dl class="detail-list">
+          <div><dt>Account holder</dt><dd><a href="/admin/users/<%= t.owner_id %>"><%= t.owner_name %></a> (@<%= t.owner_username %>)</dd></div>
+          <div><dt>Account</dt><dd class="mono"><%= t.account_number %></dd></div>
+          <div><dt>Amount</dt><dd class="amount-<%= t.direction %> strong"><%= t.direction === 'credit' ? '+' : '−' %><%= fmt.formatUSD(t.amount_cents) %></dd></div>
+          <div><dt>Balance after</dt><dd><%= fmt.formatUSD(t.balance_after_cents) %></dd></div>
+          <% if (t.counterparty_name) { %><div><dt>Counterparty</dt><dd><%= t.counterparty_name %> <span class="mono"><%= t.counterparty_account_number %></span></dd></div><% } %>
+          <div><dt>Description</dt><dd><%= t.description %></dd></div>
+          <% if (t.user_reference) { %><div><dt>Customer reference</dt><dd><%= t.user_reference %></dd></div><% } %>
+          <div><dt>Date</dt><dd><%= fmt.formatDate(t.created_at) %></dd></div>
+          <div><dt>Entry ID</dt><dd class="mono small"><%= t.id %></dd></div>
+          <% if (t.idempotency_key) { %><div><dt>Idempotency key</dt><dd class="mono small"><%= t.idempotency_key %></dd></div><% } %>
+          <% if (t.admin_username) { %><div><dt>Approved by admin</dt><dd><%= t.admin_username %></dd></div><% } %>
+        </dl>
+      </div>
+    <% }) %>
+  </div>
+  <% if (depositRequest) { %>
+    <h4>Source deposit request</h4>
+    <dl class="detail-list cols">
+      <div><dt>Method</dt><dd><%= fmt.titleCase(depositRequest.method) %></dd></div>
+      <div><dt>Requested</dt><dd><%= fmt.formatDate(depositRequest.created_at) %></dd></div>
+      <div><dt>Reviewed by</dt><dd><%= depositRequest.reviewer || 'system (seed)' %></dd></div>
+      <div><dt>Review note</dt><dd><%= depositRequest.review_note || '—' %></dd></div>
+    </dl>
+  <% } %>
+</section>
