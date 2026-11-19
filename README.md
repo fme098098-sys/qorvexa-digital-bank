@@ -120,6 +120,7 @@ See [`.env.example`](.env.example). Key variables:
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `DATABASE_SSL` | `true` for managed Postgres requiring TLS |
+| `AUTO_MIGRATE` | Apply pending migrations when the server starts (default `true` in production, `false` otherwise). With it off, the server refuses to start on an unmigrated database and prints `Database not migrated: run npm run migrate` |
 | `TEST_DATABASE_URL` | Database used (and **wiped**) by `npm test` |
 | `SESSION_SECRET` | Long random secret (required in production) |
 | `SESSION_TTL_MINUTES` / `REMEMBER_ME_DAYS` | Session idle timeout / *Remember me* lifetime |
@@ -185,16 +186,22 @@ student/staging host using the platform's default subdomain** (e.g. `your-app.on
 ### Render (example)
 1. Push the repository to GitHub.
 2. Create a **PostgreSQL** instance; copy its *Internal Database URL*.
-3. Create a **Web Service** from the repo:
-   - Build command: `npm ci && npm run migrate`
+3. Create a **Web Service** from the repo (Node 20.9 or newer; tested on Node 24 and 26):
+   - Build command: `npm ci`
    - Start command: `npm start`
-   - Environment: `NODE_ENV=production`, `DATABASE_URL=<internal url>`, `DATABASE_SSL=true` (if required), `SESSION_SECRET=<random>`, `TRUST_PROXY=1`, `APP_BASE_URL=https://<your-app>.onrender.com`
-4. Open the Render shell and run `npm run create-admin -- --email … --username … --role super_admin`.
+   - Environment: `NODE_ENV=production`, `DATABASE_URL=<internal url>`, `SESSION_SECRET=<random>`, `TRUST_PROXY=1`, `APP_BASE_URL=https://<your-app>.onrender.com`
+     (`DATABASE_SSL=true` only when using the *External* URL)
+   - In production `AUTO_MIGRATE` defaults to `true`, so `npm start` applies any pending migrations (including the
+     `session` table) before it begins listening. Migrations are idempotent and guarded by an advisory lock.
+     No separate migrate step is needed, so this also works on Free instances, which have no pre-deploy command.
+     On a paid instance you may instead set the pre-deploy command to `npm run migrate`.
+4. Create the first admin: from the Render shell run `npm run create-admin -- --email … --username … --role super_admin`,
+   or run the same command on your own machine with `DATABASE_URL=<external url> DATABASE_SSL=true`.
 5. Optional: `npm run seed` for fictional sample data.
 
 ### Railway (example)
-Add a PostgreSQL plugin, set the same variables (`DATABASE_URL` is provided), use `npm run migrate && npm start`
-as the start command, then run `npm run create-admin` from the Railway CLI (`railway run npm run create-admin -- …`).
+Add a PostgreSQL plugin, set the same variables (`DATABASE_URL` is provided), use `npm start` as the start command
+(migrations run automatically at boot in production), then run `npm run create-admin` from the Railway CLI (`railway run npm run create-admin -- …`).
 
 ### Production checklist
 - `NODE_ENV=production`, strong `SESSION_SECRET`, HTTPS (cookies become `Secure` automatically), `TRUST_PROXY` set correctly
