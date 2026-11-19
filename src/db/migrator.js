@@ -11,7 +11,7 @@ const { pool } = require('./pool');
 
 const MIGRATIONS_DIR = path.join(__dirname, '..', '..', 'db', 'migrations');
 const LOCK_KEY = 4815162342; // arbitrary app-wide advisory lock id
-const REQUIRED_TABLES = ['users', 'accounts', 'transactions', 'admin_users', 'audit_logs', 'system_settings', 'session'];
+const REQUIRED_TABLES = ['users', 'accounts', 'transactions', 'admin_users', 'audit_logs', 'system_settings', 'session', 'login_events'];
 
 function migrationFiles() {
   return fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort();

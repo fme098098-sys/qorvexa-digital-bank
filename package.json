@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "bowser": "^2.15.0",
     "chart.js": "^4.6.1",
     "compression": "^1.8.2",
     "connect-pg-simple": "^10.0.0",
