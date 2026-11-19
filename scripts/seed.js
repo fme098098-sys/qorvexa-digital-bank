@@ -10,6 +10,7 @@ const db = require('../src/db/pool');
 const users = require('../src/services/userService');
 const ledger = require('../src/services/ledgerService');
 const support = require('../src/services/supportService');
+const loginEvents = require('../src/services/loginEventService');
 
 const PASSWORD = process.env.SEED_PASSWORD || 'Qorvexa#2026';
 
@@ -32,7 +33,11 @@ const key = () => crypto.randomUUID();
 
 async function main() {
   const exists = (await db.query(`SELECT count(*)::int AS n FROM users WHERE username = 'amara'`)).rows[0].n;
-  if (exists) { console.log('Sample data already present - skipping seed.'); return; }
+  if (exists) {
+    console.log('Sample data already present - skipping customers.');
+    await seedLoginActivity();
+    return;
+  }
 
   const created = {};
   for (const [i, s] of SAMPLE.entries()) {
@@ -100,7 +105,52 @@ async function main() {
   await support.create({ user: null, name: 'Priya Raman', email: 'priya.raman@example.com', subject: 'How do I open a business account?', category: 'account', message: 'I run a small design studio and would like to know what I need to open a business account.' });
 
   await db.query(`INSERT INTO audit_logs (actor_type, actor_label, action, details) VALUES ('system', 'seed', 'seed.complete', $1)`, [JSON.stringify({ customers: SAMPLE.length + RECENT.length, transactions: activity.length })]);
+  await seedLoginActivity();
   console.log(`Seeded ${SAMPLE.length + RECENT.length} fictional customers (password: ${PASSWORD}) and ${activity.length} transactions.`);
+}
+
+// Fictional sign-in history (documentation IP ranges from RFC 5737) so the
+// login-activity screens have something to show. Runs once.
+const UAS = {
+  chromeWin: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  safariMac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15',
+  safariIphone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1',
+  chromeAndroid: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+  firefoxLinux: 'Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0',
+  edgeWin: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
+};
+const hoursAgo = (h) => new Date(Date.now() - h * 3600 * 1000);
+async function seedLoginActivity() {
+  const n = (await db.query('SELECT count(*)::int AS n FROM login_events')).rows[0].n;
+  if (n) return;
+  const u = Object.fromEntries((await db.query('SELECT id, username FROM users')).rows.map((r) => [r.username, r]));
+  const req = (ua, ip) => ({ ip, get: () => ua });
+  // [username, ua, ip, hoursAgo, success, reason, newDevice]
+  const plan = [
+    ['amara', 'chromeWin', '203.0.113.14', 24 * 20, true], ['amara', 'chromeWin', '203.0.113.14', 24 * 6, true],
+    ['amara', 'safariIphone', '198.51.100.23', 30, true, null, true], ['amara', 'chromeWin', '203.0.113.14', 5, true],
+    ['daniel.mercer', 'safariMac', '192.0.2.40', 24 * 15, true], ['daniel.mercer', 'safariMac', '192.0.2.40', 26, true],
+    ['daniel.mercer', 'chromeAndroid', '198.51.100.77', 3, true, null, true],
+    ['sofia', 'firefoxLinux', '203.0.113.90', 24 * 9, true], ['sofia', 'firefoxLinux', '203.0.113.90', 8, true],
+    ['kenji', 'edgeWin', '192.0.2.18', 24 * 4, true], ['kenji', 'edgeWin', '192.0.2.18', 2, true],
+    ['kwame', 'chromeAndroid', '203.0.113.51', 24 * 3, true],
+    ['kwame', 'chromeWin', '198.51.100.201', 1.6, false, 'bad_password'], ['kwame', 'chromeWin', '198.51.100.201', 1.5, false, 'bad_password'],
+    ['kwame', 'chromeWin', '198.51.100.202', 1.4, false, 'bad_password'], ['kwame', 'chromeWin', '198.51.100.202', 1.3, false, 'bad_password_locked'],
+    ['kwame', 'chromeWin', '198.51.100.202', 1.1, false, 'locked'],
+    ['mei', 'safariIphone', '203.0.113.120', 40, true], ['mei', 'chromeWin', '203.0.113.121', 0.7, true, null, true],
+    ['lucia', 'safariMac', '192.0.2.77', 24 * 2, true], ['lucia', 'safariMac', '192.0.2.77', 12, false, 'bad_password'],
+  ];
+  for (const [name, ua, ip, h, success, reason = null, isNew = false] of plan) {
+    const user = u[name];
+    if (!user) continue;
+    await loginEvents.record({ actorType: 'user', userId: user.id, identifier: name, event: 'login', success, failureReason: reason,
+      isNewDevice: isNew, info: loginEvents.clientInfo(req(UAS[ua], ip)), at: hoursAgo(h) });
+  }
+  for (const [ident, h] of [['admin', 9], ['root', 8.9], ['test@qorvexa.example', 4]]) {
+    await loginEvents.record({ actorType: ident === 'test@qorvexa.example' ? 'user' : 'admin', identifier: ident, event: 'login', success: false,
+      failureReason: 'unknown_user', info: loginEvents.clientInfo(req(UAS.firefoxLinux, '192.0.2.250')), at: hoursAgo(h) });
+  }
+  console.log(`Seeded ${plan.length + 3} fictional sign-in events.`);
 }
 
 main().then(() => db.pool.end()).catch((e) => { console.error(e); db.pool.end(); process.exit(1); });

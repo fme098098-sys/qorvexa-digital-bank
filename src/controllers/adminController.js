@@ -8,6 +8,7 @@ const ledger = require('../services/ledgerService');
 const support = require('../services/supportService');
 const audit = require('../services/auditService');
 const settings = require('../services/settingsService');
+const loginEvents = require('../services/loginEventService');
 const { collect, profileFields, password, COUNTRIES } = require('../middleware/validate');
 const { parseAmountToCents, formatUSD } = require('../utils/money');
 const { flash } = require('../utils/flash');
@@ -85,9 +86,14 @@ async function renderUser(req, res, { errors = [], status = 200, form = null } =
     ledger.listDepositRequests({ userId: user.id, perPage: 10 }),
     db.query(`SELECT * FROM audit_logs WHERE entity_id = $1::text OR actor_id = $1::uuid ORDER BY created_at DESC LIMIT 15`, [user.id]),
   ]);
+  // Sign-in data (IP addresses, devices) is limited to operations staff.
+  const canSeeLogins = req.admin.role !== 'support';
+  const [loginActivity, sessions] = canSeeLogins
+    ? await Promise.all([loginEvents.forUser(user.id, 25), loginEvents.activeSessions('user', user.id)])
+    : [[], []];
   res.status(status).render('admin/user-detail', {
     title: user.full_name, layout: 'layouts/admin', user, account, recent: recent.rows, stats, deposits: deposits.rows,
-    logs: logs.rows, countries: COUNTRIES, errors, form: form || user, TYPE_LABELS });
+    logs: logs.rows, countries: COUNTRIES, errors, form: form || user, TYPE_LABELS, canSeeLogins, loginActivity, sessions });
 }
 exports.userDetail = (req, res) => renderUser(req, res);
 
@@ -122,6 +128,41 @@ exports.setStatus = async (req, res) => {
     flash(req, 'error', e.message);
   }
   res.redirect(`/admin/users/${req.params.id}`);
+};
+
+exports.revokeSessions = async (req, res) => {
+  if (!isUuid(req.params.id)) throw notFound();
+  const user = await users.getById(req.params.id);
+  if (!user) throw notFound();
+  const ended = await db.withTransaction(async (client) => {
+    const n = await loginEvents.revokeUserSessions(user.id, {}, client);
+    await loginEvents.record({ actorType: 'user', userId: user.id, identifier: `admin:${req.admin.username}`, event: 'forced_logout', success: true, req }, client);
+    await audit.log({ actorType: 'admin', actorId: req.admin.id, actorLabel: req.admin.username, action: 'customer.sessions_revoked', entityType: 'user', entityId: user.id, details: { username: user.username, sessions_ended: n }, req }, client);
+    await require('../services/notificationService').create(user.id, { category: 'security', title: 'Signed out of all devices', body: 'Qorvexa staff signed you out of all active sessions. Sign in again to continue.', link: '/profile#sign-ins' }, client);
+    return n;
+  });
+  flash(req, 'success', `Signed ${user.full_name} out of ${ended} active session${ended === 1 ? '' : 's'}. Recorded in the audit log.`);
+  res.redirect(`/admin/users/${user.id}#sessions`);
+};
+
+// ---------------------------------------------------------------- login activity
+exports.loginActivity = async (req, res) => {
+  const filters = {
+    q: String(req.query.q || '').slice(0, 64),
+    status: ['success', 'failed'].includes(req.query.status) ? req.query.status : '',
+    actorType: ['user', 'admin'].includes(req.query.actor) ? req.query.actor : '',
+    event: loginEvents.EVENTS.includes(req.query.event) ? req.query.event : '',
+    from: DATE_RE.test(req.query.from || '') ? req.query.from : '',
+    to: DATE_RE.test(req.query.to || '') ? req.query.to : '',
+    newOnly: req.query.new === '1',
+  };
+  const [result, hotspots, counts] = await Promise.all([
+    loginEvents.list({ ...filters, page: pageNum(req.query.page), perPage: 50 }),
+    loginEvents.failedHotspots(), loginEvents.alertCounts()]);
+  res.render('admin/login-activity', {
+    title: 'Login activity', layout: 'layouts/admin', result, filters, hotspots, counts, EVENTS: loginEvents.EVENTS, displayTz: process.env.DISPLAY_TIMEZONE || 'UTC',
+    query: { q: filters.q, status: filters.status, actor: filters.actorType, event: filters.event, from: filters.from, to: filters.to, new: filters.newOnly ? '1' : '' },
+  });
 };
 
 // ---------------------------------------------------------------- transactions
