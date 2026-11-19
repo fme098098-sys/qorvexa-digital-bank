@@ -1,0 +1,7 @@
+<tr>
+  <td><span class="tx-icon tx-<%= t.direction %>"><%- icon(t.type === 'deposit' ? 'deposit' : t.type === 'withdrawal' ? 'withdraw' : t.direction === 'credit' ? 'down' : 'send') %></span></td>
+  <td><a href="/transactions/<%= t.reference %>" class="tx-title"><%= t.counterparty_name || t.description %></a>
+    <small class="muted"><%= fmt.TYPE_LABELS[t.type] %> · <%= t.reference %></small></td>
+  <td class="hide-sm muted"><%= fmt.formatDate(t.created_at) %></td>
+  <td class="num amount-<%= t.direction %>"><%= t.direction === 'credit' ? '+' : '−' %><%= fmt.formatUSD(t.amount_cents) %></td>
+</tr>

@@ -1,0 +1,14 @@
+<h1 class="auth-title">Choose a new password</h1>
+<% if (!valid) { %>
+  <div class="alert alert-error"><%- icon('alert') %><span>This reset link is invalid or has expired. Please request a new one.</span></div>
+  <a href="/forgot-password" class="btn btn-primary btn-block">Request a new link</a>
+<% } else { %>
+  <%- include('../partials/errors') %>
+  <form method="post" action="/reset-password/<%= token %>" class="form" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label class="field"><span>New password</span><input type="password" name="password" autocomplete="new-password" required minlength="10" maxlength="128" data-strength></label>
+    <div class="strength"><div class="strength-bar"><i></i></div><small>At least 10 characters with upper &amp; lowercase letters, a number and a symbol.</small></div>
+    <label class="field"><span>Confirm new password</span><input type="password" name="confirmPassword" autocomplete="new-password" required maxlength="128"></label>
+    <button type="submit" class="btn btn-primary btn-block btn-lg">Reset password</button>
+  </form>
+<% } %>

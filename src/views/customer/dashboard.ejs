@@ -1,0 +1,65 @@
+<section class="welcome">
+  <div>
+    <h2>Welcome back, <%= currentUser.full_name.split(' ')[0] %> 👋</h2>
+    <p class="muted">Here's an overview of your <%= account.account_type %> account.</p>
+  </div>
+  <div class="quick-actions">
+    <a href="/transfer" class="btn btn-primary"><%- icon('send') %> Transfer</a>
+    <a href="/deposit" class="btn btn-ghost"><%- icon('deposit') %> Deposit</a>
+    <a href="/withdraw" class="btn btn-ghost"><%- icon('withdraw') %> Withdraw</a>
+  </div>
+</section>
+
+<section class="balance-grid">
+  <div class="balance-card">
+    <div class="balance-head"><span>Account balance</span><span class="status-pill status-<%= account.status %>"><%= fmt.titleCase(account.status) %></span></div>
+    <div class="balance-amount" data-testid="balance"><%= fmt.formatUSD(account.balance_cents) %></div>
+    <div class="balance-meta">
+      <div><small>Available balance</small><strong><%= fmt.formatUSD(account.balance_cents - account.hold_cents) %></strong></div>
+      <div><small>Account number</small><strong class="mono"><%= account.account_number %></strong></div>
+      <div><small>Account ID</small><strong class="mono"><%= currentUser.customer_id %></strong></div>
+    </div>
+    <span class="balance-sim">Simulated funds · USD</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon stat-green"><%- icon('down') %></span>
+    <small>Total incoming transfers</small>
+    <strong><%= fmt.formatUSD(stats.totals.transfers_in) %></strong>
+    <span class="muted">All money in: <%= fmt.formatUSD(stats.totals.incoming) %></span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-icon stat-red"><%- icon('up') %></span>
+    <small>Total outgoing transfers</small>
+    <strong><%= fmt.formatUSD(stats.totals.transfers_out) %></strong>
+    <span class="muted">All money out: <%= fmt.formatUSD(stats.totals.outgoing) %></span>
+  </div>
+</section>
+
+<section class="dash-grid">
+  <div class="card">
+    <div class="card-head"><h3>Transaction history</h3><span class="muted">Last 6 months</span></div>
+    <div class="chart-box"><canvas id="historyChart" data-chart="history" data-labels="<%= JSON.stringify(chart.labels) %>" data-credits="<%= JSON.stringify(chart.credits) %>" data-debits="<%= JSON.stringify(chart.debits) %>" aria-label="Money in and out by month"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Monthly spending summary</h3></div>
+    <table class="table compact">
+      <thead><tr><th>Month</th><th class="num">Transfers</th><th class="num">Withdrawals</th><th class="num">Total out</th></tr></thead>
+      <tbody>
+        <% stats.monthly.slice().reverse().forEach(function (m) { %>
+          <tr><td><%= m.label %></td><td class="num"><%= fmt.formatUSD(m.transfers_out) %></td><td class="num"><%= fmt.formatUSD(m.withdrawals) %></td><td class="num strong"><%= fmt.formatUSD(m.debits) %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h3>Recent transactions</h3><a href="/transactions" class="link">View all <%- icon('chevron') %></a></div>
+  <% if (!recent.length) { %>
+    <div class="empty"><%- icon('inbox') %><p>No transactions yet. <a href="/deposit">Request a deposit</a> to get started.</p></div>
+  <% } else { %>
+    <table class="table tx-table"><tbody>
+      <% recent.forEach(function (t) { %><%- include('_tx-row', { t: t }) %><% }) %>
+    </tbody></table>
+  <% } %>
+</section>

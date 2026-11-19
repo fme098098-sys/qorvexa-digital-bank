@@ -1,0 +1,39 @@
+<div class="page-grid">
+  <section class="card">
+    <div class="card-head"><h3><%- icon('users') %> Saved beneficiaries</h3></div>
+    <% if (!items.length) { %>
+      <div class="empty"><%- icon('users') %><p>Add the people you pay most often for faster transfers.</p></div>
+    <% } else { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Name</th><th>Account number</th><th class="hide-sm">Username</th><th class="num">Actions</th></tr></thead>
+      <tbody>
+        <% items.forEach(function (b) { %>
+          <tr>
+            <td><strong><%= b.nickname || b.full_name %></strong><% if (b.nickname) { %><small class="muted"><%= b.full_name %></small><% } %></td>
+            <td class="mono"><%= b.account_number %></td>
+            <td class="hide-sm">@<%= b.username %></td>
+            <td class="num nowrap">
+              <a class="btn btn-primary btn-sm" href="/transfer?to=<%= b.account_number %>"><%- icon('send') %> Pay</a>
+              <form method="post" action="/beneficiaries/<%= b.id %>/delete" class="inline" data-confirm="Remove this beneficiary?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm" type="submit"><%- icon('trash') %> Remove</button></form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table></div>
+    <% } %>
+  </section>
+  <aside class="card">
+    <div class="card-head"><h3><%- icon('plus') %> Add beneficiary</h3></div>
+    <%- include('../partials/errors') %>
+    <form method="post" action="/beneficiaries" class="form" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="field"><span>Account number or username</span>
+        <div class="input-group"><input name="identifier" id="ben-identifier" required maxlength="32" value="<%= form.identifier || '' %>" autocomplete="off">
+          <button type="button" class="input-addon text" data-lookup="#ben-identifier" data-target="#ben-result">Verify</button></div></label>
+      <div id="ben-result" class="lookup-result" aria-live="polite"></div>
+      <label class="field"><span>Nickname <em class="muted">(optional)</em></span><input name="nickname" maxlength="60" value="<%= form.nickname || '' %>"></label>
+      <button type="submit" class="btn btn-primary btn-block">Save beneficiary</button>
+    </form>
+  </aside>
+</div>
