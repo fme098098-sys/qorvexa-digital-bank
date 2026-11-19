@@ -38,6 +38,7 @@ tickets, a role-based admin console and an immutable audit log.
 - Deposits (simulated card / wire / cash *requests*, credited only after admin approval) and simulated withdrawals
 - Transaction history with search, type and date filters, pagination and CSV export; transaction details; PDF receipts; printable views
 - Account statements for any date range (opening/closing balance, money in/out) as page, print, or PDF
+- **Recent sign-ins** on Profile settings (time, browser, OS, device, IP, new-device flag), list of active sessions and *Sign out other sessions*; a security notification for every sign-in from a new browser/OS/IP combination
 - Profile management, change password, notification centre (read / read all / delete), beneficiaries (verify, add, pay, remove), support tickets
 
 **Administrators** (separate login at `/admin/login`, separate session key, roles `super_admin`, `admin`, `support`)
@@ -46,6 +47,8 @@ tickets, a role-based admin console and an immutable audit log.
 - Transaction management: search by reference/account/name, filter by type/date, view both legs of any transfer (read-only)
 - Deposit request review (approve → ledgered credit; reject → reason required)
 - Support desk (status, priority, response; customers are notified)
+- **Login activity** (`/admin/login-activity`): every customer and admin sign-in attempt, sign-out, password reset and forced sign-out with IP, browser, OS and device; filters (user, success/failed, account type, event, date range, new devices only); recent failed attempts summarised and highlighted; sidebar badge with new-device sign-ins in the last 24 hours
+- Per-customer **Login activity** table and **Active sessions** list with *Sign out all sessions* (audit-logged, customer notified) on the user detail page
 - System activity & audit log (filter by actor type, search)
 - System settings (limits, registration on/off, customer banner) — editable by `super_admin` only, every change audited with old/new values
 
@@ -121,6 +124,7 @@ See [`.env.example`](.env.example). Key variables:
 | `DATABASE_URL` | PostgreSQL connection string |
 | `DATABASE_SSL` | `true` for managed Postgres requiring TLS |
 | `AUTO_MIGRATE` | Apply pending migrations when the server starts (default `true` in production, `false` otherwise). With it off, the server refuses to start on an unmigrated database and prints `Database not migrated: run npm run migrate` |
+| `DISPLAY_TIMEZONE` | IANA time zone for sign-in times on the login-activity screens (default `UTC`) |
 | `TEST_DATABASE_URL` | Database used (and **wiped**) by `npm test` |
 | `SESSION_SECRET` | Long random secret (required in production) |
 | `SESSION_TTL_MINUTES` / `REMEMBER_ME_DAYS` | Session idle timeout / *Remember me* lifetime |
@@ -175,6 +179,8 @@ bash scripts/smoke.sh   # end-to-end curl smoke test against a running server (B
 The suites cover:
 - **auth** — registration (hashing, unique IDs, duplicates, weak passwords), login by username/email, secure cookie flags, CSRF rejection, protected-route redirects, suspended users, lockout, logout, change password, single-use reset tokens
 - **transfers** — atomic two-leg posting, username recipients, insufficient funds, nonexistent recipient, self-transfer, invalid amounts, suspended recipient, **12 concurrent transfers racing for the same balance** (no overdraft, ledger reconciles), **6 concurrent duplicates with one idempotency key** (exactly one transfer), limits, DB-level balance guard / immutability / CHECK constraint, full HTTP review → confirm → re-submit flow, receipt access control, withdrawals, deposit approval
+- **loginActivity** — recording of logins/failures/unknown usernames/logouts/password resets/admin logins, append-only table, new-device detection (browser+OS, IP, registration baseline, notification), admin page filters and failure highlighting, support/customer access denied, admin force sign-out (audited, notified, admin session kept), customer *sign out other sessions*
+- **resilience** — no double response when the session store fails, idempotent migrations
 - **admin** — separate admin login, customers blocked from admin, role restrictions (support/admin/super_admin), deposit approval/rejection audited, suspend/reactivate audited and enforced, admin-created customer with ledgered opening deposit, profile edits audited without touching balances, search by name/account/reference
 
 ## Deployment
@@ -226,8 +232,10 @@ Add a PostgreSQL plugin, set the same variables (`DATABASE_URL` is provided), us
 ## Database schema
 
 Tables: `users`, `admin_users`, `accounts`, `transactions`, `beneficiaries`, `notifications`,
-`deposit_requests`, `support_tickets`, `password_resets`, `audit_logs`, `system_settings`, `session`
-(plus `schema_migrations`). See [`db/schema.sql`](db/schema.sql) for constraints, indexes, foreign keys and triggers.
+`deposit_requests`, `support_tickets`, `password_resets`, `audit_logs`, `login_events`, `system_settings`, `session`
+(plus `schema_migrations` and the `user_sessions` view). See [`db/schema.sql`](db/schema.sql) and [`db/migrations/`](db/migrations) for constraints, indexes, foreign keys and triggers.
+
+**Sign-in tracking** (`db/migrations/002_login_events.sql`): `login_events` is append-only and stores the actor (customer or admin; `NULL` id when the typed username matched nobody), the identifier typed, event (`login`, `logout`, `password_reset_request`, `password_reset`, `forced_logout`, `sessions_revoked`), success and failure reason, IP (honours `TRUST_PROXY`), raw user agent and the browser/OS/device parsed with [bowser](https://github.com/bowser-js/bowser), and `is_new_device`. A successful sign-in is a *new device* when its browser + OS + IP combination has never signed in to that account before; an account's first recorded sign-in (e.g. right after registration) is its baseline. Session rows keep the signed-in user/admin id plus IP and parsed user agent inside connect-pg-simple's JSON, exposed as columns by the `user_sessions` view.
 
 ## Pages and routes
 
@@ -252,7 +260,7 @@ Tables: `users`, `admin_users`, `accounts`, `transactions`, `beneficiaries`, `no
 | 17 | User management | `/admin/users`, `/admin/users/new`, `/admin/users/:id` |
 | 18 | Transaction management | `/admin/transactions`, `/admin/transactions/:ref`, `/admin/deposits` |
 | 19 | Support management | `/admin/support`, `/admin/support/:id` |
-| 20 | System settings | `/admin/settings` (+ `/admin/audit-logs`) |
+| 20 | System settings | `/admin/settings` (+ `/admin/audit-logs`, `/admin/login-activity`) |
 
 Additional customer pages: `/beneficiaries`, `/support`.
 
