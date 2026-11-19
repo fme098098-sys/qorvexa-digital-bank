@@ -1,0 +1,23 @@
+<section class="card narrow-card">
+  <div class="card-head"><h3><%- icon('shield-check') %> Review &amp; confirm transfer</h3></div>
+  <%- include('../partials/errors') %>
+  <dl class="detail-list">
+    <div><dt>Recipient name</dt><dd class="strong"><%= draft.recipientName %></dd></div>
+    <div><dt>Recipient account</dt><dd class="mono"><%= draft.recipientAccountNumber %></dd></div>
+    <div><dt>Amount</dt><dd class="big"><%= fmt.formatUSD(draft.amountCents) %></dd></div>
+    <div><dt>Description</dt><dd><%= draft.description %></dd></div>
+    <% if (draft.reference) { %><div><dt>Reference</dt><dd><%= draft.reference %></dd></div><% } %>
+    <div><dt>From account</dt><dd class="mono"><%= account.account_number %></dd></div>
+    <div><dt>Balance after transfer</dt><dd><%= fmt.formatUSD(account.balance_cents - draft.amountCents) %></dd></div>
+  </dl>
+  <form method="post" action="/transfer/confirm" class="form" data-once>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="idempotencyKey" value="<%= draft.idempotencyKey %>">
+    <label class="check confirm-box"><input type="checkbox" name="confirmName" value="1" required>
+      <span>I confirm the recipient name is <strong><%= draft.recipientName %></strong> and I want to send <strong><%= fmt.formatUSD(draft.amountCents) %></strong>.</span></label>
+    <div class="form-row">
+      <a href="/transfer" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-lg"><%- icon('send') %> Confirm transfer</button>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,30 @@
+<div class="page-grid">
+  <section class="card">
+    <div class="card-head"><h3><%- icon('support') %> My support tickets</h3></div>
+    <% if (!tickets.length) { %>
+      <div class="empty"><%- icon('support') %><p>No support tickets yet.</p></div>
+    <% } else { %>
+      <ul class="ticket-list">
+        <% tickets.forEach(function (t) { %>
+          <li>
+            <div class="ticket-top"><strong><%= t.subject %></strong><span class="status-pill status-<%= t.status %>"><%= fmt.titleCase(t.status) %></span></div>
+            <small class="muted"><%= t.ticket_number %> · <%= fmt.titleCase(t.category) %> · <%= fmt.formatDate(t.created_at) %></small>
+            <p><%= t.message %></p>
+            <% if (t.admin_response) { %><div class="ticket-reply"><strong>Qorvexa support</strong> <small class="muted"><%= fmt.formatDate(t.responded_at) %></small><p><%= t.admin_response %></p></div><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+  <aside class="card">
+    <div class="card-head"><h3><%- icon('plus') %> New ticket</h3></div>
+    <%- include('../partials/errors') %>
+    <form method="post" action="/support" class="form" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="field"><span>Subject</span><input name="subject" required maxlength="140" value="<%= form.subject || '' %>"></label>
+      <label class="field"><span>Topic</span><select name="category"><% categories.forEach(function (c) { %><option value="<%= c %>" <%= form.category === c ? 'selected' : '' %>><%= fmt.titleCase(c) %></option><% }) %></select></label>
+      <label class="field"><span>Message</span><textarea name="message" rows="6" required maxlength="4000"><%= form.message || '' %></textarea></label>
+      <button type="submit" class="btn btn-primary btn-block"><%- icon('send') %> Submit ticket</button>
+    </form>
+  </aside>
+</div>

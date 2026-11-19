@@ -1,0 +1,29 @@
+<section class="card receipt-card printable">
+  <% if (isReceipt) { %>
+    <div class="receipt-success"><%- icon('check') %><div><h2>Success</h2><p class="muted">Your transaction has been completed and recorded.</p></div></div>
+  <% } %>
+  <div class="receipt-head">
+    <div class="brand"><img src="/static/img/logo.svg" alt="" width="34" height="34"><span>QORVEXA <em>DIGITAL BANK</em></span></div>
+    <span class="status-pill status-approved"><%= fmt.titleCase(tx.status) %></span>
+  </div>
+  <div class="receipt-amount amount-<%= tx.direction %>"><%= tx.direction === 'credit' ? '+' : '−' %><%= fmt.formatUSD(tx.amount_cents) %></div>
+  <p class="center muted"><%= TYPE_LABELS[tx.type] %></p>
+  <dl class="detail-list">
+    <div><dt>Reference</dt><dd class="mono"><%= tx.reference %></dd></div>
+    <div><dt>Date &amp; time</dt><dd><%= fmt.formatDate(tx.created_at) %></dd></div>
+    <div><dt>Account</dt><dd class="mono"><%= tx.account_number %></dd></div>
+    <% if (tx.counterparty_name) { %>
+      <div><dt><%= tx.direction === 'debit' ? 'Recipient' : 'Sender' %></dt><dd><%= tx.counterparty_name %></dd></div>
+      <div><dt><%= tx.direction === 'debit' ? 'Recipient account' : 'Sender account' %></dt><dd class="mono"><%= tx.counterparty_account_number %></dd></div>
+    <% } %>
+    <div><dt>Description</dt><dd><%= tx.description %></dd></div>
+    <% if (tx.user_reference) { %><div><dt>Your reference</dt><dd><%= tx.user_reference %></dd></div><% } %>
+    <div><dt>Balance after</dt><dd><%= fmt.formatUSD(tx.balance_after_cents) %></dd></div>
+  </dl>
+  <%- include('../partials/notice') %>
+  <div class="form-row no-print">
+    <a href="/transactions/<%= tx.reference %>/receipt.pdf" class="btn btn-primary"><%- icon('download') %> Download PDF receipt</a>
+    <button type="button" class="btn btn-ghost" data-print><%- icon('printer') %> Print</button>
+    <a href="/transactions" class="btn btn-ghost">Back to history</a>
+  </div>
+</section>

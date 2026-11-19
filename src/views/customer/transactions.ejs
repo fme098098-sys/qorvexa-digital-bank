@@ -1,0 +1,42 @@
+<section class="card">
+  <form method="get" action="/transactions" class="filter-bar">
+    <label class="field grow"><span>Search</span><div class="input-group"><b><%- icon('search') %></b><input name="q" value="<%= filters.q %>" placeholder="Reference, description or name"></div></label>
+    <label class="field"><span>Type</span>
+      <select name="type"><option value="">All types</option>
+        <% Object.keys(TYPE_LABELS).forEach(function (k) { %><option value="<%= k %>" <%= filters.type === k ? 'selected' : '' %>><%= TYPE_LABELS[k] %></option><% }) %>
+      </select></label>
+    <label class="field"><span>From</span><input type="date" name="from" value="<%= filters.from %>"></label>
+    <label class="field"><span>To</span><input type="date" name="to" value="<%= filters.to %>"></label>
+    <div class="filter-actions">
+      <button class="btn btn-primary" type="submit"><%- icon('search') %> Filter</button>
+      <a class="btn btn-ghost" href="/transactions">Reset</a>
+      <a class="btn btn-ghost" href="/transactions/export.csv?<%= new URLSearchParams(filters).toString() %>"><%- icon('download') %> CSV</a>
+    </div>
+  </form>
+</section>
+<section class="card">
+  <div class="card-head"><h3>Transactions</h3><span class="muted"><%= result.total %> found</span></div>
+  <% if (!result.rows.length) { %>
+    <div class="empty"><%- icon('search') %><p>No transactions match your filters.</p></div>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Date</th><th>Reference</th><th>Type</th><th>Description</th><th class="num">Amount</th><th class="num hide-sm">Balance</th><th></th></tr></thead>
+      <tbody>
+        <% result.rows.forEach(function (t) { %>
+          <tr>
+            <td class="nowrap"><%= fmt.formatDate(t.created_at) %></td>
+            <td class="mono small"><a href="/transactions/<%= t.reference %>"><%= t.reference %></a></td>
+            <td><span class="type-pill type-<%= t.type %>"><%= TYPE_LABELS[t.type] %></span></td>
+            <td><%= t.description %><% if (t.counterparty_name) { %><small class="muted"><%= t.direction === 'debit' ? 'To' : 'From' %> <%= t.counterparty_name %></small><% } %></td>
+            <td class="num amount-<%= t.direction %>"><%= t.direction === 'credit' ? '+' : '−' %><%= fmt.formatUSD(t.amount_cents) %></td>
+            <td class="num hide-sm"><%= fmt.formatUSD(t.balance_after_cents) %></td>
+            <td class="nowrap"><a class="icon-btn sm" title="Download receipt" href="/transactions/<%= t.reference %>/receipt.pdf"><%- icon('download') %></a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <%- include('../partials/pagination', { result: result, query: filters }) %>
+  <% } %>
+</section>
