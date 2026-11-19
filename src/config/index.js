@@ -25,6 +25,8 @@ module.exports = {
     ? (process.env.TEST_DATABASE_URL || 'postgres://qorvexa:qorvexa_dev_pw@localhost:5432/qorvexa_test')
     : (process.env.DATABASE_URL || 'postgres://qorvexa:qorvexa_dev_pw@localhost:5432/qorvexa'),
   databaseSsl: process.env.DATABASE_SSL === 'true',
+  // Apply pending SQL migrations when the server boots (default: on in production).
+  autoMigrate: process.env.AUTO_MIGRATE ? process.env.AUTO_MIGRATE === 'true' : isProd,
   sessionSecret,
   sessionTtlMinutes: int('SESSION_TTL_MINUTES', 30),
   rememberMeDays: int('REMEMBER_ME_DAYS', 14),

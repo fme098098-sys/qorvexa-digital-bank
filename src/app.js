@@ -102,20 +102,60 @@ function createApp() {
   app.use('/', require('./routes/customer'));
   app.use('/admin', require('./routes/admin'));
 
-  app.use((req, res) => {
-    res.status(404).render('errors/error', { title: 'Page not found', status: 404, message: 'The page you are looking for does not exist.', layout: 'layouts/public' });
+  app.use((req, res, next) => {
+    if (res.headersSent) return undefined;
+    res.status(404);
+    return safeRender(res, 'errors/error', { title: 'Page not found', status: 404, message: 'The page you are looking for does not exist.', layout: 'layouts/public' });
   });
 
-  // eslint-disable-next-line no-unused-vars
-  app.use((err, req, res, next) => {
-    const status = err.status || 500;
-    if (status >= 500) console.error(err);
-    const message = err.expose ? err.message : 'Something went wrong on our side. Please try again.';
-    if (req.xhr || (req.get('accept') || '').includes('application/json')) return res.status(status).json({ error: message });
-    res.status(status).render('errors/error', { title: 'Error', status, message, layout: 'layouts/public' });
-  });
+  app.use(errorHandler);
 
   return app;
 }
 
-module.exports = { createApp };
+/**
+ * Render a view and send it only if nothing has been sent yet. Express's default
+ * render callback calls res.send() unconditionally, which throws
+ * ERR_HTTP_HEADERS_SENT from a process tick (and kills the process) when the
+ * response already went out.
+ */
+function safeRender(res, view, locals) {
+  res.render(view, locals, (renderErr, html) => {
+    if (renderErr) {
+      console.error('[render] failed to render', view, renderErr);
+      if (!res.headersSent) res.status(500).type('text/plain').send('Internal server error');
+      return;
+    }
+    if (!res.headersSent) res.send(html);
+  });
+}
+
+// eslint-disable-next-line no-unused-vars
+function errorHandler(err, req, res, next) {
+  const status = err.status || err.statusCode || 500;
+  if (err && err.code === '42P01') {
+    console.error('[db] A table is missing (Postgres 42P01). The database is not migrated: run `npm run migrate` (or set AUTO_MIGRATE=true).');
+  }
+  if (status >= 500) console.error(`[error] ${req.method} ${req.originalUrl}`, err);
+
+  // The response already started (e.g. express-session failed to save the
+  // session after the page was written, then called next(err)).
+  // We cannot send an error page now and must not write again. Let the body
+  // that is already in flight finish (compression may still be flushing it);
+  // if it never completes, drop the connection instead of hanging.
+  if (res.headersSent) {
+    if (!res.writableFinished) {
+      const timer = setTimeout(() => { if (!res.writableFinished && req.socket) req.socket.destroy(); }, 5000);
+      timer.unref();
+      res.once('close', () => clearTimeout(timer));
+    }
+    return undefined;
+  }
+
+  const message = err.expose ? err.message : 'Something went wrong on our side. Please try again.';
+  if (req.xhr || (req.get('accept') || '').includes('application/json')) return res.status(status).json({ error: message });
+  res.status(status);
+  return safeRender(res, 'errors/error', { title: 'Error', status, message, layout: 'layouts/public' });
+}
+
+module.exports = { createApp, errorHandler, safeRender };
