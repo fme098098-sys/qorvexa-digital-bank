@@ -1,0 +1,42 @@
+<section class="card">
+  <form method="get" action="/statements" class="filter-bar">
+    <label class="field"><span>From</span><input type="date" name="from" value="<%= from %>" required></label>
+    <label class="field"><span>To</span><input type="date" name="to" value="<%= to %>" required></label>
+    <div class="filter-actions">
+      <button class="btn btn-primary" type="submit"><%- icon('eye') %> View statement</button>
+      <a class="btn btn-gold" href="/statements/download?from=<%= from %>&to=<%= to %>"><%- icon('download') %> Download PDF</a>
+      <button type="button" class="btn btn-ghost" data-print><%- icon('printer') %> Print</button>
+    </div>
+  </form>
+</section>
+<section class="card printable">
+  <div class="receipt-head">
+    <div class="brand"><img src="/static/img/logo.svg" alt="" width="34" height="34"><span>QORVEXA <em>DIGITAL BANK</em></span></div>
+    <div class="right"><strong>Account statement</strong><br><span class="muted"><%= from %> to <%= to %></span></div>
+  </div>
+  <p><strong><%= currentUser.full_name %></strong><br><span class="muted">Account <span class="mono"><%= account.account_number %></span> · <%= fmt.titleCase(account.account_type) %> · Account ID <%= currentUser.customer_id %></span></p>
+  <div class="summary-grid">
+    <div><small>Opening balance</small><strong><%= fmt.formatUSD(data.openingBalance) %></strong></div>
+    <div><small>Money in</small><strong class="amount-credit"><%= fmt.formatUSD(data.credits) %></strong></div>
+    <div><small>Money out</small><strong class="amount-debit"><%= fmt.formatUSD(data.debits) %></strong></div>
+    <div><small>Closing balance</small><strong><%= fmt.formatUSD(data.closingBalance) %></strong></div>
+  </div>
+  <% if (!data.rows.length) { %>
+    <div class="empty"><%- icon('file') %><p>No transactions in this period.</p></div>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th class="num">Amount</th><th class="num">Balance</th></tr></thead>
+      <tbody>
+        <% data.rows.forEach(function (t) { %>
+          <tr><td class="nowrap"><%= fmt.formatDate(t.created_at, false) %></td><td class="mono small"><%= t.reference %></td>
+            <td><%= t.description %><% if (t.counterparty_name) { %><small class="muted"><%= t.counterparty_name %></small><% } %></td>
+            <td class="num amount-<%= t.direction %>"><%= t.direction === 'credit' ? '+' : '−' %><%= fmt.formatUSD(t.amount_cents) %></td>
+            <td class="num"><%= fmt.formatUSD(t.balance_after_cents) %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+  <%- include('../partials/notice') %>
+</section>

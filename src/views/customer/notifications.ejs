@@ -1,0 +1,30 @@
+<section class="card">
+  <div class="card-head">
+    <div class="tabs">
+      <a href="/notifications" class="<%= filter === 'all' ? 'active' : '' %>">All</a>
+      <a href="/notifications?filter=unread" class="<%= filter === 'unread' ? 'active' : '' %>">Unread <% if (unreadCount) { %><b class="badge"><%= unreadCount %></b><% } %></a>
+    </div>
+    <form method="post" action="/notifications/read-all"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost btn-sm" type="submit"><%- icon('check') %> Mark all as read</button></form>
+  </div>
+  <% if (!items.length) { %>
+    <div class="empty"><%- icon('bell') %><p>You're all caught up.</p></div>
+  <% } else { %>
+  <ul class="notif-list">
+    <% items.forEach(function (n) { %>
+      <li class="<%= n.is_read ? '' : 'unread' %>">
+        <span class="notif-icon cat-<%= n.category %>"><%- icon({ transfer: 'send', deposit: 'deposit', withdrawal: 'withdraw', security: 'lock', support: 'support', account: 'user' }[n.category] || 'info') %></span>
+        <div class="notif-body"><strong><%= n.title %></strong><p><%= n.body %></p><small class="muted"><%= fmt.formatDate(n.created_at) %></small></div>
+        <div class="notif-actions">
+          <% if (n.link) { %>
+            <form method="post" action="/notifications/<%= n.id %>/read"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="go" value="1"><button class="btn btn-ghost btn-sm" type="submit">Open</button></form>
+          <% } %>
+          <% if (!n.is_read) { %>
+            <form method="post" action="/notifications/<%= n.id %>/read"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="icon-btn sm" title="Mark as read" type="submit"><%- icon('check') %></button></form>
+          <% } %>
+          <form method="post" action="/notifications/<%= n.id %>/delete" data-confirm="Delete this notification?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="icon-btn sm" title="Delete" type="submit"><%- icon('trash') %></button></form>
+        </div>
+      </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

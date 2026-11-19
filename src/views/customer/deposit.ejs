@@ -1,0 +1,39 @@
+<div class="page-grid">
+  <section class="card">
+    <div class="card-head"><h3><%- icon('deposit') %> Deposit funds</h3></div>
+    <%- include('../partials/errors') %>
+    <form method="post" action="/deposit" class="form" novalidate data-once>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="idempotencyKey" value="<%= idempotencyKey %>">
+      <label class="field"><span>Amount (USD)</span>
+        <div class="input-group money"><b>$</b><input name="amount" inputmode="decimal" required value="<%= form.amount || '' %>" placeholder="0.00"></div></label>
+      <fieldset class="field"><span>Deposit method</span>
+        <div class="choice-grid">
+          <% [['simulated_card','card','Card top-up'],['simulated_wire','globe','Wire transfer'],['simulated_cash','deposit','Cash deposit']].forEach(function (m) { %>
+            <label class="choice"><input type="radio" name="method" value="<%= m[0] %>" <%= (form.method || 'simulated_card') === m[0] ? 'checked' : '' %>>
+              <span><%- icon(m[1]) %><strong><%= m[2] %></strong><small>Simulated</small></span></label>
+          <% }) %>
+        </div></fieldset>
+      <label class="field"><span>Note <em class="muted">(optional)</em></span><input name="note" maxlength="200" value="<%= form.note || '' %>" placeholder="e.g. Salary"></label>
+      <button type="submit" class="btn btn-primary btn-lg"><%- icon('deposit') %> Submit deposit request</button>
+      <p class="hint"><%- icon('info') %> Deposits are simulated. Your request is reviewed by an administrator and credited on approval. Maximum <%= fmt.formatUSD(limits.max_deposit_request_cents) %> per request.</p>
+    </form>
+  </section>
+  <aside class="card">
+    <div class="card-head"><h3>Your deposit requests</h3></div>
+    <% if (!requests.length) { %>
+      <div class="empty small"><%- icon('inbox') %><p>No deposit requests yet.</p></div>
+    <% } else { %>
+      <ul class="req-list">
+        <% requests.forEach(function (r) { %>
+          <li>
+            <div><strong><%= fmt.formatUSD(r.amount_cents) %></strong><small class="muted"><%= r.reference %> · <%= fmt.formatDate(r.created_at) %></small>
+              <% if (r.review_note && r.status === 'rejected') { %><small class="muted">Reason: <%= r.review_note %></small><% } %></div>
+            <% if (r.status === 'approved') { %><a href="/transactions/<%= r.reference %>" class="status-pill status-approved">Approved</a>
+            <% } else { %><span class="status-pill status-<%= r.status %>"><%= fmt.titleCase(r.status) %></span><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </aside>
+</div>
