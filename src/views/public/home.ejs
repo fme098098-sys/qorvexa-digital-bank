@@ -1,0 +1,112 @@
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-copy reveal">
+      <span class="eyebrow"><%- icon('shield-check') %> Secure digital banking</span>
+      <h1>Your money, <span class="gold">moving at the speed of now.</span></h1>
+      <p class="lead">QORVEXA DIGITAL BANK brings accounts, instant transfers, receipts and statements together in one elegant, secure experience — on desktop, tablet and mobile.</p>
+      <div class="hero-cta">
+        <a href="/register" class="btn btn-gold btn-lg">Open an account <%- icon('chevron') %></a>
+        <a href="/login" class="btn btn-outline-light btn-lg">Login</a>
+      </div>
+      <p class="hero-note"><%- icon('info') %> Educational software project — balances and transactions are simulated.</p>
+    </div>
+    <div class="hero-visual reveal">
+      <div class="bank-card">
+        <div class="bank-card-top"><img src="/static/img/logo.svg" alt="" width="34" height="34"><span>QORVEXA</span></div>
+        <div class="chip"></div>
+        <div class="bank-card-number">4012 •••• •••• 2048</div>
+        <div class="bank-card-bottom"><span>CHECKING</span><span>USD</span></div>
+      </div>
+      <div class="float-card float-a"><%- icon('up') %><div><small>Transfer received</small><strong>+$1,250.00</strong></div></div>
+      <div class="float-card float-b"><%- icon('shield-check') %><div><small>Session secured</small><strong>Signed in</strong></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="trust-strip">
+  <div class="container trust-grid">
+    <div><%- icon('lock') %><span>Hashed passwords</span></div>
+    <div><%- icon('shield') %><span>CSRF &amp; XSS protection</span></div>
+    <div><%- icon('activity') %><span>Full audit trail</span></div>
+    <div><%- icon('zap') %><span>Atomic transfers</span></div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow dark">Everything in one place</span>
+      <h2>Banking features built for everyday life</h2>
+      <p>Each feature is backed by a real server, database and ledger — no static mock-ups.</p>
+    </div>
+    <div class="feature-grid">
+      <% [
+        ['send','Instant transfers','Send USD to any Qorvexa customer by account number or username, with name confirmation before you pay.'],
+        ['deposit','Deposits','Request simulated deposits by card, wire or cash; funds post once reviewed by our operations team.'],
+        ['withdraw','Withdrawals','Withdraw from your available balance with daily limits that keep your account safe.'],
+        ['list','Smart history','Search, filter by date and type, and export your transactions in seconds.'],
+        ['file','Receipts & statements','Download a PDF receipt for every transaction and statements for any period.'],
+        ['bell','Real-time alerts','Notifications for every transfer, deposit decision and security event.'],
+        ['users','Beneficiaries','Save the people you pay most and send to them in two taps.'],
+        ['support','Human support','Raise a ticket from your dashboard and follow our response in one place.']
+      ].forEach(function (f) { %>
+        <article class="feature-card reveal">
+          <span class="feature-icon"><%- icon(f[0]) %></span>
+          <h3><%= f[1] %></h3>
+          <p><%= f[2] %></p>
+        </article>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="section section-navy">
+  <div class="container">
+    <div class="section-head light">
+      <span class="eyebrow">Secure by design</span>
+      <h2>Security you can inspect</h2>
+      <p>Qorvexa is engineered with the same building blocks used by modern financial software.</p>
+    </div>
+    <div class="security-grid">
+      <div class="sec-item"><%- icon('lock') %><h4>Protected credentials</h4><p>Passwords are hashed with bcrypt and never stored in plain text. Repeated failures lock sign-in temporarily.</p></div>
+      <div class="sec-item"><%- icon('shield-check') %><h4>Hardened sessions</h4><p>HTTP-only, SameSite cookies, CSRF tokens on every form, and strict content security policies.</p></div>
+      <div class="sec-item"><%- icon('database') %><h4>Ledger integrity</h4><p>Transfers run in a single database transaction with row locking and duplicate-submission protection.</p></div>
+      <div class="sec-item"><%- icon('activity') %><h4>Complete audit trail</h4><p>Every administrative action is recorded in an append-only log. Balances only change through the ledger.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow dark">How it works</span>
+      <h2>Up and running in minutes</h2>
+    </div>
+    <ol class="steps">
+      <li class="reveal"><span>1</span><h4>Register</h4><p>Create your profile, choose a checking, savings or business account and receive a unique account number.</p></li>
+      <li class="reveal"><span>2</span><h4>Fund your account</h4><p>Submit a simulated deposit request. Once approved it appears instantly in your balance and history.</p></li>
+      <li class="reveal"><span>3</span><h4>Send &amp; track</h4><p>Transfer to other customers, download receipts and monitor spending from your dashboard.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section section-soft" id="support">
+  <div class="container support-band">
+    <div>
+      <span class="eyebrow dark">Customer support</span>
+      <h2>We're here when you need us</h2>
+      <p>Questions about an account, a transfer or a deposit? Our team responds through your support centre and by email.</p>
+      <ul class="contact-list dark">
+        <li><%- icon('mail') %> <%= brand.supportEmail %></li>
+        <li><%- icon('phone') %> <%= brand.supportPhone %></li>
+        <li><%- icon('clock') %> Monday – Friday, 08:00 – 18:00</li>
+      </ul>
+    </div>
+    <div class="cta-card">
+      <h3>Ready to get started?</h3>
+      <p>Open an account in under two minutes.</p>
+      <a href="/register" class="btn btn-gold btn-block">Register now</a>
+      <a href="/contact" class="btn btn-ghost btn-block">Contact support</a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,45 @@
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow">Contact us</span>
+    <h1>How can we help?</h1>
+    <p class="lead">Send us a message and our support team will respond. Messages are tracked as support tickets.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container two-col">
+    <div class="card">
+      <h2 class="h3">Send a message</h2>
+      <%- include('../partials/errors') %>
+      <form method="post" action="/contact" class="form" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="grid-2">
+          <label class="field"><span>Full name</span><input name="name" required maxlength="120" value="<%= form.name || (currentUser ? currentUser.full_name : '') %>"></label>
+          <label class="field"><span>Email address</span><input type="email" name="email" required maxlength="254" value="<%= form.email || (currentUser ? currentUser.email : '') %>"></label>
+        </div>
+        <div class="grid-2">
+          <label class="field"><span>Subject</span><input name="subject" required maxlength="140" value="<%= form.subject || '' %>"></label>
+          <label class="field"><span>Topic</span>
+            <select name="category">
+              <% ['general','account','transfer','deposit','technical','other'].forEach(function (c) { %>
+                <option value="<%= c %>" <%= form.category === c ? 'selected' : '' %>><%= fmt.titleCase(c) %></option>
+              <% }) %>
+            </select></label>
+        </div>
+        <label class="field"><span>Message</span><textarea name="message" rows="6" required maxlength="4000"><%= form.message || '' %></textarea></label>
+        <button type="submit" class="btn btn-primary"><%- icon('send') %> Send message</button>
+      </form>
+    </div>
+    <div>
+      <div class="card contact-card">
+        <h3>Customer support</h3>
+        <ul class="contact-list dark">
+          <li><%- icon('mail') %> <%= brand.supportEmail %></li>
+          <li><%- icon('phone') %> <%= brand.supportPhone %></li>
+          <li><%- icon('pin') %> <%= brand.address %></li>
+          <li><%- icon('clock') %> Monday – Friday, 08:00 – 18:00</li>
+        </ul>
+      </div>
+      <%- include('../partials/notice') %>
+    </div>
+  </div>
+</section>
