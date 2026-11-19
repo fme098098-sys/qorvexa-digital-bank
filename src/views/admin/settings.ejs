@@ -1,0 +1,23 @@
+<section class="card narrow-card wide">
+  <div class="card-head"><h3><%- icon('settings') %> System settings</h3><% if (!canEdit) { %><span class="muted">Read-only · super admin required to change</span><% } %></div>
+  <form method="post" action="/admin/settings" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% all.forEach(function (s) { %>
+      <div class="setting-row">
+        <div><strong><%= fmt.titleCase(s.key.replace('_cents', '')) %></strong><small class="muted"><%= s.description %></small>
+          <small class="muted">Last updated <%= fmt.formatDate(s.updated_at) %><%= s.updated_by_name ? ' by ' + s.updated_by_name : '' %></small></div>
+        <div>
+          <% if (s.key.endsWith('_cents')) { %>
+            <div class="input-group money"><b>$</b><input name="<%= s.key %>" value="<%= (parseInt(s.value, 10) / 100).toFixed(2) %>" <%= canEdit ? '' : 'disabled' %>></div>
+          <% } else if (s.key === 'registration_open') { %>
+            <label class="switch"><input type="checkbox" name="registration_open" <%= s.value === 'true' ? 'checked' : '' %> <%= canEdit ? '' : 'disabled' %>><span></span> Open</label>
+          <% } else { %>
+            <input name="<%= s.key %>" value="<%= s.value %>" maxlength="240" <%= canEdit ? '' : 'disabled' %> placeholder="(none)">
+          <% } %>
+        </div>
+      </div>
+    <% }) %>
+    <% if (canEdit) { %><button class="btn btn-primary" type="submit">Save settings</button><% } %>
+    <p class="hint"><%- icon('info') %> Every change is recorded in the audit log with old and new values.</p>
+  </form>
+</section>

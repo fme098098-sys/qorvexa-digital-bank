@@ -1,0 +1,12 @@
+<span class="eyebrow dark"><%- icon('shield') %> Staff portal</span>
+<h1 class="auth-title">Administrator sign in</h1>
+<p class="auth-sub">Restricted to authorised Qorvexa administrators. All activity is logged.</p>
+<%- include('../partials/errors') %>
+<form method="post" action="/admin/login" class="form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <label class="field"><span>Admin email or username</span><input name="identifier" autocomplete="username" required maxlength="254" value="<%= form.identifier || '' %>" autofocus></label>
+  <label class="field"><span>Password</span><input type="password" name="password" autocomplete="current-password" required maxlength="128"></label>
+  <button type="submit" class="btn btn-navy btn-block btn-lg"><%- icon('lock') %> Sign in to admin console</button>
+</form>
+<p class="auth-switch"><a href="/login">Customer sign in</a></p>
+<%- include('../partials/notice') %>

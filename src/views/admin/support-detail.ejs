@@ -1,0 +1,21 @@
+<div class="page-grid">
+  <section class="card">
+    <div class="card-head"><h3><%= ticket.subject %></h3><span class="status-pill status-<%= ticket.status %>"><%= fmt.titleCase(ticket.status) %></span></div>
+    <p class="muted small"><span class="mono"><%= ticket.ticket_number %></span> · <%= fmt.titleCase(ticket.category) %> · <%= fmt.formatDate(ticket.created_at) %></p>
+    <p class="muted"><strong><%= ticket.name %></strong> &lt;<%= ticket.email %>&gt; <% if (ticket.user_id) { %>· <a href="/admin/users/<%= ticket.user_id %>">View customer</a><% } else { %>· website visitor<% } %></p>
+    <div class="ticket-message"><%= ticket.message %></div>
+    <% if (ticket.admin_response) { %>
+      <div class="ticket-reply"><strong>Latest response</strong> <small class="muted">by <%= ticket.assigned_username || 'staff' %> · <%= fmt.formatDate(ticket.responded_at) %></small><p><%= ticket.admin_response %></p></div>
+    <% } %>
+  </section>
+  <aside class="card">
+    <div class="card-head"><h3>Manage ticket</h3><a class="link" href="/admin/support">All tickets</a></div>
+    <form method="post" action="/admin/support/<%= ticket.id %>" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="field"><span>Status</span><select name="status"><% statuses.forEach(function (s) { %><option value="<%= s %>" <%= ticket.status === s ? 'selected' : '' %>><%= fmt.titleCase(s) %></option><% }) %></select></label>
+      <label class="field"><span>Priority</span><select name="priority"><% ['low','normal','high'].forEach(function (p) { %><option value="<%= p %>" <%= ticket.priority === p ? 'selected' : '' %>><%= fmt.titleCase(p) %></option><% }) %></select></label>
+      <label class="field"><span>Response to customer</span><textarea name="response" rows="6" maxlength="4000" placeholder="<%= ticket.user_id ? 'Shown in the customer support centre and sent as a notification.' : 'Recorded on the ticket. Reply to the visitor by email.' %>"></textarea></label>
+      <button class="btn btn-primary btn-block" type="submit">Update ticket</button>
+    </form>
+  </aside>
+</div>
