@@ -1,0 +1,33 @@
+<%
+  const showUser = typeof showWho === 'undefined' ? true : showWho;
+  const evLabel = { login: 'Sign-in', logout: 'Sign-out', password_reset_request: 'Reset requested', password_reset: 'Password reset', forced_logout: 'Forced sign-out', sessions_revoked: 'Signed out others' };
+%>
+<div class="table-wrap"><table class="table compact login-table">
+  <thead><tr><th>Time</th><% if (showUser) { %><th>Account</th><% } %><th>Event</th><th>Result</th><th>IP address</th><th>Browser</th><th>OS</th><th>Device</th><th>New device</th></tr></thead>
+  <tbody>
+    <% events.forEach(function (e) { %>
+      <tr class="<%= !e.success ? (e.recent_failure ? 'row-failed row-failed-recent' : 'row-failed') : (e.is_new_device ? 'row-new-device' : '') %>">
+        <td class="nowrap small"><%= fmt.formatDateTime(e.created_at) %><br><span class="muted"><%= fmt.timeAgo(e.created_at) %></span></td>
+        <% if (showUser) { %>
+          <td class="small">
+            <span class="actor-pill actor-<%= e.actor_type %>"><%= e.actor_type === 'admin' ? 'admin' : 'customer' %></span>
+            <% if (e.user_id && e.user_username) { %><a href="/admin/users/<%= e.user_id %>"><%= e.user_username %></a>
+            <% } else if (e.admin_username) { %><%= e.admin_username %>
+            <% } else { %><span class="muted" title="No matching account">“<%= e.identifier || '—' %>”</span><% } %>
+          </td>
+        <% } %>
+        <td class="small nowrap"><%= evLabel[e.event] || e.event %></td>
+        <td class="nowrap">
+          <% if (e.success) { %><span class="status-pill status-active">Success</span>
+          <% } else { %><span class="status-pill status-suspended">Failed</span><br><small class="muted"><%= fmt.titleCase(e.failure_reason || '') %></small><% } %>
+        </td>
+        <td class="mono small nowrap"><%= e.ip || '—' %></td>
+        <td class="small" title="<%= e.user_agent || '' %>"><%= e.browser || 'Unknown' %><%= e.browser_version ? ' ' + e.browser_version : '' %></td>
+        <td class="small"><%= e.os || 'Unknown' %><%= e.os_version ? ' ' + e.os_version : '' %></td>
+        <td class="small"><%= fmt.titleCase(e.device_type || 'unknown') %><%= e.device_model ? ' · ' + e.device_model : '' %></td>
+        <td><% if (e.is_new_device) { %><span class="status-pill status-new-device">New device</span><% } else { %><span class="muted">—</span><% } %></td>
+      </tr>
+    <% }) %>
+    <% if (!events.length) { %><tr><td colspan="<%= showUser ? 9 : 8 %>" class="muted center">No sign-in activity recorded.</td></tr><% } %>
+  </tbody>
+</table></div>

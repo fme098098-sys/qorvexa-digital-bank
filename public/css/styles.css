@@ -465,3 +465,21 @@ textarea { resize: vertical; }
   .sim-notice { display: flex !important; border: 1px solid #999; }
   body { background: #fff; }
 }
+
+/* ---------------------------------------------------------------- login activity */
+.status-new-device { background: var(--gold-100); color: #8A6A0B; border: 1px solid var(--gold-300); }
+.login-table tr.row-failed td { background: #FFF8F7; }
+.login-table tr.row-failed-recent td, tr.row-failed-recent td { background: var(--red-bg); }
+.login-table tr.row-failed-recent td:first-child, tr.row-failed-recent td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+.login-table tr.row-new-device td { background: #FFFCF1; }
+.card-alert { border-left: 4px solid var(--red); }
+.session-list li { align-items: flex-start; }
+.side-nav .badge { white-space: nowrap; }
+a.stat-card { color: inherit; text-decoration: none; }
+a.stat-card:hover { box-shadow: 0 6px 18px rgba(6,19,37,.08); }
+#sign-ins { margin-top: 1.25rem; }
+#sign-ins h4 { margin: 0 0 .6rem; }
+.login-table { font-size: .82rem; }
+.login-table th, .login-table td { padding: .5rem .45rem; }
+.login-table th { white-space: nowrap; }
+.login-table .status-pill { font-size: .7rem; padding: .2em .55em; }

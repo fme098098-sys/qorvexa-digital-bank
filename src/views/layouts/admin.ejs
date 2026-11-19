@@ -10,11 +10,12 @@
       <% const ops = currentAdmin.role !== 'support';
       const nav = [ ['/admin','grid','Dashboard', true], ['/admin/users','users','User management', true],
         ['/admin/transactions','list','Transactions', ops], ['/admin/deposits','deposit','Deposit requests', ops],
-        ['/admin/support','support','Support management', true], ['/admin/audit-logs','activity','Activity logs', ops],
+        ['/admin/support','support','Support management', true], ['/admin/login-activity','eye','Login activity', ops], ['/admin/audit-logs','activity','Activity logs', ops],
         ['/admin/settings','settings','System settings', ops] ];
       nav.filter(function (n) { return n[3]; }).forEach(function (n) {
         const active = path === n[0] || (n[0] !== '/admin' && path.indexOf(n[0]) === 0); %>
-        <a href="<%= n[0] %>" class="<%= active ? 'active' : '' %>"><%- icon(n[1]) %><span><%= n[2] %></span></a>
+        <a href="<%= n[0] %>" class="<%= active ? 'active' : '' %>"><%- icon(n[1]) %><span><%= n[2] %></span>
+          <% if (n[0] === '/admin/login-activity' && typeof loginAlerts !== 'undefined' && loginAlerts && loginAlerts.new_devices) { %><b class="badge" title="New-device sign-ins in the last 24 hours"><%= loginAlerts.new_devices %> new</b><% } %></a>
       <% }) %>
     </nav>
     <form method="post" action="/admin/logout" class="side-logout">

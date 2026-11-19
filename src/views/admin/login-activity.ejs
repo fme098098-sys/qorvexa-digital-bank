@@ -1,0 +1,51 @@
+<section class="stat-grid">
+  <a class="stat-card" href="/admin/login-activity?new=1"><span class="stat-icon stat-gold"><%- icon('eye') %></span><small>New-device sign-ins</small><strong><%= counts.new_devices %></strong><span class="muted">Last 24 hours · view</span></a>
+  <a class="stat-card" href="/admin/login-activity?status=failed"><span class="stat-icon stat-red"><%- icon('alert') %></span><small>Failed sign-in attempts</small><strong><%= counts.failed %></strong><span class="muted">Last 24 hours · view</span></a>
+  <div class="stat-card"><span class="stat-icon stat-blue"><%- icon('activity') %></span><small>Events matching filters</small><strong><%= result.total %></strong><span class="muted">Customers and administrators</span></div>
+</section>
+
+<% if (hotspots.length) { %>
+<section class="card card-alert">
+  <div class="card-head"><h3><%- icon('alert') %> Recent failed sign-in attempts (last 24 hours)</h3><a class="link" href="/admin/login-activity?status=failed">Show all failures</a></div>
+  <div class="table-wrap"><table class="table compact">
+    <thead><tr><th>Account / identifier</th><th class="num">Attempts</th><th class="num">IPs</th><th>Last IP</th><th>Last reason</th><th>Last attempt</th></tr></thead>
+    <tbody>
+      <% hotspots.forEach(function (h) { %>
+        <tr class="<%= h.attempts >= 3 ? 'row-failed-recent' : '' %>">
+          <td><span class="actor-pill actor-<%= h.actor_type %>"><%= h.actor_type === 'admin' ? 'admin' : 'customer' %></span>
+            <% if (h.user_id) { %><a href="/admin/users/<%= h.user_id %>"><%= h.who %></a><% } else { %><%= h.who || '—' %><% } %></td>
+          <td class="num"><strong><%= h.attempts %></strong></td><td class="num"><%= h.ips %></td>
+          <td class="mono small"><%= h.last_ip || '—' %></td><td class="small"><%= fmt.titleCase(h.last_reason || '') %></td>
+          <td class="small nowrap"><%= fmt.formatDateTime(h.last_at) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table></div>
+</section>
+<% } %>
+
+<section class="card">
+  <form method="get" action="/admin/login-activity" class="filter-bar">
+    <label class="field grow"><span>User</span><div class="input-group"><b><%- icon('search') %></b><input name="q" value="<%= filters.q %>" placeholder="Username, email, name or IP"></div></label>
+    <label class="field"><span>Result</span><select name="status">
+      <option value="">All results</option>
+      <option value="success" <%= filters.status === 'success' ? 'selected' : '' %>>Successful</option>
+      <option value="failed" <%= filters.status === 'failed' ? 'selected' : '' %>>Failed</option></select></label>
+    <label class="field"><span>Account type</span><select name="actor">
+      <option value="">Customers &amp; admins</option>
+      <option value="user" <%= filters.actorType === 'user' ? 'selected' : '' %>>Customers</option>
+      <option value="admin" <%= filters.actorType === 'admin' ? 'selected' : '' %>>Administrators</option></select></label>
+    <label class="field"><span>Event</span><select name="event"><option value="">All events</option>
+      <% EVENTS.forEach(function (ev) { %><option value="<%= ev %>" <%= filters.event === ev ? 'selected' : '' %>><%= fmt.titleCase(ev) %></option><% }) %></select></label>
+    <label class="field"><span>From</span><input type="date" name="from" value="<%= filters.from %>"></label>
+    <label class="field"><span>To</span><input type="date" name="to" value="<%= filters.to %>"></label>
+    <label class="check"><input type="checkbox" name="new" value="1" <%= filters.newOnly ? 'checked' : '' %>> New devices only</label>
+    <div class="filter-actions"><button class="btn btn-primary" type="submit"><%- icon('search') %> Filter</button><a class="btn btn-ghost" href="/admin/login-activity">Reset</a></div>
+  </form>
+</section>
+
+<section class="card">
+  <div class="card-head"><h3>Sign-in activity</h3><span class="muted">Times shown in <%= displayTz %> · failed attempts in the last 24 h are highlighted</span></div>
+  <%- include('_login-table', { events: result.rows, showWho: true }) %>
+  <%- include('../partials/pagination', { result: result, query: query }) %>
+</section>
