@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db/pool');
 const config = require('../config');
 const audit = require('./auditService');
+const loginEvents = require('./loginEventService');
 const { AppError } = require('../utils/errors');
 
 const DUMMY_HASH = bcrypt.hashSync('timing-equaliser', 4);
@@ -28,6 +29,8 @@ async function authenticate(identifier, password, req) {
   const ok = await bcrypt.compare(password || '', admin ? admin.password_hash : DUMMY_HASH);
   if (!admin || !ok || !admin.is_active) {
     await audit.log({ actorType: admin ? 'admin' : 'guest', actorId: admin ? admin.id : null, actorLabel: ident.slice(0, 140), action: 'admin.login_failed', req });
+    await loginEvents.record({ actorType: 'admin', adminId: admin ? admin.id : null, identifier: ident, event: 'login', success: false,
+      failureReason: !admin ? 'unknown_user' : (!ok ? 'bad_password' : 'inactive'), req });
     throw new AppError('Invalid administrator credentials.', 401);
   }
   await db.query('UPDATE admin_users SET last_login_at = now() WHERE id = $1', [admin.id]);

@@ -12,7 +12,7 @@ const app = createApp();
 const PASSWORD = 'Str0ng#Passw0rd';
 
 async function resetData() {
-  await db.query(`TRUNCATE password_resets, beneficiaries, notifications, support_tickets, "session" RESTART IDENTITY CASCADE`);
+  await db.query(`TRUNCATE password_resets, beneficiaries, notifications, support_tickets, login_events, "session" RESTART IDENTITY CASCADE`);
   // Ledger/audit tables are append-only; disable their guard triggers only for test cleanup.
   await db.query('ALTER TABLE transactions DISABLE TRIGGER transactions_immutable');
   await db.query('ALTER TABLE audit_logs DISABLE TRIGGER audit_logs_immutable');

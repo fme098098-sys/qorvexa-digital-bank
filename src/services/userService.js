@@ -5,6 +5,7 @@ const config = require('../config');
 const audit = require('./auditService');
 const notifications = require('./notificationService');
 const mail = require('./mailService');
+const loginEvents = require('./loginEventService');
 const { AppError } = require('../utils/errors');
 const { genCustomerId, genAccountNumber, genToken, sha256 } = require('../utils/ids');
 
@@ -96,9 +97,11 @@ async function authenticate(identifier, password, req) {
   if (!user) {
     await bcrypt.compare(password || '', DUMMY_HASH); // reduce user-enumeration timing differences
     await audit.log({ actorType: 'guest', actorLabel: ident.slice(0, 140), action: 'auth.login_failed', details: { reason: 'unknown_user' }, req });
+    await loginEvents.record({ actorType: 'user', identifier: ident, event: 'login', success: false, failureReason: 'unknown_user', req });
     throw generic;
   }
   if (user.locked_until && new Date(user.locked_until) > new Date()) {
+    await loginEvents.record({ actorType: 'user', userId: user.id, identifier: ident, event: 'login', success: false, failureReason: 'locked', req });
     throw new AppError('Too many failed attempts. Please try again in a few minutes.', 429);
   }
   const ok = await bcrypt.compare(password || '', user.password_hash);
@@ -109,10 +112,12 @@ async function authenticate(identifier, password, req) {
       `UPDATE users SET failed_logins = $2, locked_until = CASE WHEN $3 THEN now() + interval '${LOCK_MINUTES} minutes' ELSE locked_until END WHERE id = $1`,
       [user.id, lock ? 0 : failed, lock]);
     await audit.log({ actorType: 'user', actorId: user.id, actorLabel: user.username, action: lock ? 'auth.locked' : 'auth.login_failed', details: { reason: 'bad_password' }, req });
+    await loginEvents.record({ actorType: 'user', userId: user.id, identifier: ident, event: 'login', success: false, failureReason: lock ? 'bad_password_locked' : 'bad_password', req });
     throw generic;
   }
   if (user.status !== 'active') {
     await audit.log({ actorType: 'user', actorId: user.id, actorLabel: user.username, action: 'auth.login_blocked', details: { reason: 'suspended' }, req });
+    await loginEvents.record({ actorType: 'user', userId: user.id, identifier: ident, event: 'login', success: false, failureReason: 'suspended', req });
     throw new AppError('This account is suspended. Please contact customer support.', 403);
   }
   await db.query('UPDATE users SET failed_logins = 0, locked_until = NULL, last_login_at = now() WHERE id = $1', [user.id]);
@@ -172,7 +177,8 @@ async function setStatus(userId, status, reason, admin, req) {
     await client.query(`UPDATE accounts SET status = $2 WHERE user_id = $1`, [userId, status === 'active' ? 'active' : 'frozen']);
     if (status === 'suspended') {
       // Terminate the customer's active sessions.
-      await client.query(`DELETE FROM "session" WHERE sess::jsonb ->> 'userId' = $1`, [userId]);
+      await loginEvents.revokeUserSessions(userId, {}, client);
+      await loginEvents.record({ actorType: 'user', userId, identifier: `admin:${admin.username}`, event: 'forced_logout', success: true, failureReason: 'account_suspended', req }, client);
     }
     await notifications.create(userId, {
       category: 'account',
@@ -219,12 +225,14 @@ async function requestPasswordReset(email, req) {
   const user = rows[0];
   if (!user) {
     await audit.log({ actorType: 'guest', actorLabel: String(email).slice(0, 140), action: 'auth.reset_requested_unknown', req });
+    await loginEvents.record({ actorType: 'user', identifier: String(email || '').trim(), event: 'password_reset_request', success: false, failureReason: 'unknown_email', req });
     return null;
   }
   const token = genToken();
   await db.query('UPDATE password_resets SET used_at = now() WHERE user_id = $1 AND used_at IS NULL', [user.id]);
   await db.query(`INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES ($1,$2, now() + interval '30 minutes')`, [user.id, sha256(token)]);
   await audit.log({ actorType: 'user', actorId: user.id, actorLabel: user.username, action: 'auth.reset_requested', req });
+  await loginEvents.record({ actorType: 'user', userId: user.id, identifier: user.email, event: 'password_reset_request', success: true, req });
   const link = `${config.baseUrl}/reset-password/${token}`;
   await mail.send({
     to: user.email,
@@ -249,7 +257,8 @@ async function resetPassword(token, newPassword, req) {
     if (!reset) throw new AppError('This reset link is invalid or has expired.');
     await client.query('UPDATE password_resets SET used_at = now() WHERE id = $1', [reset.id]);
     await client.query('UPDATE users SET password_hash = $2, failed_logins = 0, locked_until = NULL, updated_at = now() WHERE id = $1', [reset.user_id, hash]);
-    await client.query(`DELETE FROM "session" WHERE sess::jsonb ->> 'userId' = $1`, [reset.user_id]);
+    await loginEvents.revokeUserSessions(reset.user_id, {}, client);
+    await loginEvents.record({ actorType: 'user', userId: reset.user_id, event: 'password_reset', success: true, req }, client);
     await notifications.create(reset.user_id, { category: 'security', title: 'Password reset', body: 'Your password was reset using a reset link.' }, client);
     await audit.log({ actorType: 'user', actorId: reset.user_id, action: 'auth.password_reset', req }, client);
   });

@@ -5,6 +5,7 @@ const users = require('../services/userService');
 const admins = require('../services/adminService');
 const settings = require('../services/settingsService');
 const audit = require('../services/auditService');
+const loginEvents = require('../services/loginEventService');
 const { collect, password, COUNTRIES } = require('../middleware/validate');
 const { flash } = require('../utils/flash');
 
@@ -23,14 +24,16 @@ exports.login = async (req, res) => {
   try {
     const user = await users.authenticate(identifier, pw, req);
     const returnTo = req.session.returnTo;
-    const adminId = req.session.adminId; // keep a concurrent admin session if present
+    const { adminId, adminLogin } = req.session; // keep a concurrent admin session if present
     await regenerate(req);
     req.session.userId = user.id;
-    if (adminId) req.session.adminId = adminId;
+    req.session.userLogin = loginEvents.sessionMeta(req);
+    if (adminId) { req.session.adminId = adminId; req.session.adminLogin = adminLogin; }
     if (remember) req.session.cookie.maxAge = config.rememberMeDays * 24 * 60 * 60 * 1000;
     req.session.remember = Boolean(remember);
     req.session.flash = { type: 'success', message: `Welcome back, ${user.full_name.split(' ')[0]}.` };
     await save(req);
+    await loginEvents.recordSuccessfulLogin({ actorType: 'user', principal: user, identifier, req, sessionId: req.sessionID });
     res.redirect(returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/dashboard');
   } catch (e) {
     if (!e.expose) throw e;
@@ -39,8 +42,12 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  if (req.user) await audit.log({ actorType: 'user', actorId: req.user.id, actorLabel: req.user.username, action: 'auth.logout', req });
+  if (req.user) {
+    await audit.log({ actorType: 'user', actorId: req.user.id, actorLabel: req.user.username, action: 'auth.logout', req });
+    await loginEvents.record({ actorType: 'user', userId: req.user.id, identifier: req.user.username, event: 'logout', success: true, req, sessionId: req.sessionID });
+  }
   delete req.session.userId;
+  delete req.session.userLogin;
   delete req.session.transferDraft;
   req.session.flash = { type: 'success', message: 'You have been signed out securely.' };
   res.redirect('/login');
@@ -67,8 +74,11 @@ exports.register = async (req, res) => {
     }, { req });
     await regenerate(req);
     req.session.userId = user.id;
+    req.session.userLogin = loginEvents.sessionMeta(req);
     req.session.flash = { type: 'success', message: `Your account ${account.account_number} is ready. Welcome to Qorvexa, ${user.full_name.split(' ')[0]}!` };
     await save(req);
+    // The sign-in that follows registration is the customer's baseline device.
+    await loginEvents.recordSuccessfulLogin({ actorType: 'user', principal: user, req, sessionId: req.sessionID, firstDevice: true });
     res.redirect('/dashboard');
   } catch (e) {
     if (!e.expose) throw e;
@@ -104,6 +114,7 @@ exports.reset = async (req, res) => {
     await users.resetPassword(req.params.token, req.body.password, req);
   } catch (e) {
     if (!e.expose) throw e;
+    await loginEvents.record({ actorType: 'user', event: 'password_reset', success: false, failureReason: 'invalid_or_expired_token', req });
     return render([e.message], 400);
   }
   flash(req, 'success', 'Your password has been reset. You can now sign in.');
@@ -119,12 +130,14 @@ exports.adminLoginForm = (req, res) => {
 exports.adminLogin = async (req, res) => {
   try {
     const admin = await admins.authenticate(req.body.identifier, req.body.password, req);
-    const userId = req.session.userId;
+    const { userId, userLogin } = req.session;
     await regenerate(req);
     req.session.adminId = admin.id;
-    if (userId) req.session.userId = userId;
+    req.session.adminLogin = loginEvents.sessionMeta(req);
+    if (userId) { req.session.userId = userId; req.session.userLogin = userLogin; }
     req.session.flash = { type: 'success', message: `Signed in as ${admin.full_name} (${admin.role.replace('_', ' ')}).` };
     await save(req);
+    await loginEvents.recordSuccessfulLogin({ actorType: 'admin', principal: admin, identifier: req.body.identifier, req, sessionId: req.sessionID });
     res.redirect('/admin');
   } catch (e) {
     if (!e.expose) throw e;
@@ -133,8 +146,12 @@ exports.adminLogin = async (req, res) => {
 };
 
 exports.adminLogout = async (req, res) => {
-  if (req.admin) await audit.log({ actorType: 'admin', actorId: req.admin.id, actorLabel: req.admin.username, action: 'admin.logout', req });
+  if (req.admin) {
+    await audit.log({ actorType: 'admin', actorId: req.admin.id, actorLabel: req.admin.username, action: 'admin.logout', req });
+    await loginEvents.record({ actorType: 'admin', adminId: req.admin.id, identifier: req.admin.username, event: 'logout', success: true, req, sessionId: req.sessionID });
+  }
   delete req.session.adminId;
+  delete req.session.adminLogin;
   req.session.flash = { type: 'success', message: 'Administrator session ended.' };
   res.redirect('/admin/login');
 };
