@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('../partials/head') %></head>
+<body class="auth">
+<%- include('../partials/icons') %>
+<div class="auth-shell">
+  <aside class="auth-aside">
+    <a href="/" class="brand brand-light"><img src="/static/img/logo.svg" alt="" width="42" height="42"><span>QORVEXA <em>DIGITAL BANK</em></span></a>
+    <div class="auth-aside-copy">
+      <h2>Banking, <span class="gold">refined.</span></h2>
+      <p>Send money instantly between Qorvexa accounts, track every dollar and download statements in seconds.</p>
+      <ul class="tick-list">
+        <li><%- icon('shield-check') %> Encrypted passwords &amp; secure sessions</li>
+        <li><%- icon('zap') %> Instant internal transfers</li>
+        <li><%- icon('file') %> Receipts and statements on demand</li>
+      </ul>
+    </div>
+    <p class="auth-aside-note"><%- icon('info') %> Educational software project — all balances and transactions are simulated; not a real bank.</p>
+  </aside>
+  <main class="auth-main">
+    <div class="auth-card">
+      <%- include('../partials/flash') %>
+      <%- body %>
+    </div>
+    <p class="auth-footer">&copy; <%= year %> Qorvexa Digital Bank · <a href="/">Home</a> · <a href="/contact">Help</a></p>
+  </main>
+</div>
+<script src="/static/js/app.js" defer></script>
+</body>
+</html>

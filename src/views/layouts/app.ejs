@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head><%- include('../partials/head') %></head>
+<body class="app">
+<%- include('../partials/icons') %>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <a href="/dashboard" class="brand brand-light"><img src="/static/img/logo.svg" alt="" width="36" height="36"><span>QORVEXA <em>DIGITAL BANK</em></span></a>
+    <nav class="side-nav">
+      <% const nav = [
+        ['/dashboard','grid','Dashboard'], ['/transfer','send','Transfer funds'], ['/deposit','deposit','Deposit'],
+        ['/withdraw','withdraw','Withdraw'], ['/transactions','list','Transactions'], ['/statements','file','Statements'],
+        ['/beneficiaries','users','Beneficiaries'], ['/notifications','bell','Notifications'], ['/support','support','Support'],
+        ['/profile','user','Profile settings'] ];
+      nav.forEach(function (n) { const active = path === n[0] || (n[0] !== '/dashboard' && path.indexOf(n[0]) === 0); %>
+        <a href="<%= n[0] %>" class="<%= active ? 'active' : '' %>"><%- icon(n[1]) %><span><%= n[2] %></span>
+          <% if (n[0] === '/notifications' && unreadCount) { %><b class="badge"><%= unreadCount %></b><% } %></a>
+      <% }) %>
+    </nav>
+    <form method="post" action="/logout" class="side-logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="side-link-btn"><%- icon('logout') %><span>Sign out</span></button>
+    </form>
+  </aside>
+  <div class="sidebar-backdrop" data-close-sidebar></div>
+  <div class="app-main">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" type="button" aria-label="Open navigation" data-open-sidebar><%- icon('menu') %></button>
+      <h1 class="topbar-title"><%= title %></h1>
+      <div class="topbar-right">
+        <a href="/notifications" class="icon-btn" aria-label="Notifications"><%- icon('bell') %><% if (unreadCount) { %><b class="dot"><%= unreadCount %></b><% } %></a>
+        <a href="/profile" class="avatar-chip">
+          <span class="avatar"><%= currentUser.full_name.split(' ').map(function (p) { return p[0]; }).slice(0, 2).join('').toUpperCase() %></span>
+          <span class="avatar-name"><%= currentUser.full_name %></span>
+        </a>
+      </div>
+    </header>
+    <div class="content">
+      <% if (typeof banner !== 'undefined' && banner) { %><div class="alert alert-info"><%- icon('info') %><span><%= banner %></span></div><% } %>
+      <%- include('../partials/flash') %>
+      <%- body %>
+    </div>
+    <%- include('../partials/app-footer') %>
+  </div>
+</div>
+<script src="/static/vendor/chart.umd.js" defer></script>
+<script src="/static/js/app.js" defer></script>
+</body>
+</html>
