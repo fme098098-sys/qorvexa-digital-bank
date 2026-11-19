@@ -1,0 +1,9 @@
+<% const _pages = Math.max(1, Math.ceil(result.total / result.perPage)); if (_pages > 1) {
+  const _q = Object.assign({}, query || {}); delete _q.page;
+  const _qs = (p) => '?' + new URLSearchParams(Object.assign({}, _q, { page: p })).toString(); %>
+  <nav class="pagination" aria-label="Pagination">
+    <% if (result.page > 1) { %><a class="btn btn-ghost btn-sm" href="<%= _qs(result.page - 1) %>">&larr; Previous</a><% } %>
+    <span>Page <%= result.page %> of <%= _pages %> · <%= result.total %> records</span>
+    <% if (result.page < _pages) { %><a class="btn btn-ghost btn-sm" href="<%= _qs(result.page + 1) %>">Next &rarr;</a><% } %>
+  </nav>
+<% } %>

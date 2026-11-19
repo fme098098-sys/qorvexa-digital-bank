@@ -1,0 +1,28 @@
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <a href="/" class="brand brand-light"><img src="/static/img/logo.svg" alt="" width="36" height="36"><span>QORVEXA <em>DIGITAL BANK</em></span></a>
+      <p class="muted-light">Modern digital banking software, built as an academic software engineering project.</p>
+    </div>
+    <div>
+      <h4>Bank</h4>
+      <ul><li><a href="/about">About Qorvexa</a></li><li><a href="/register">Open an account</a></li><li><a href="/login">Sign in</a></li></ul>
+    </div>
+    <div>
+      <h4>Help</h4>
+      <ul><li><a href="/contact">Contact us</a></li><li><a href="/forgot-password">Reset password</a></li><li><a href="/admin/login">Staff portal</a></li></ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul class="contact-list">
+        <li><%- icon('mail') %> <%= brand.supportEmail %></li>
+        <li><%- icon('phone') %> <%= brand.supportPhone %></li>
+        <li><%- icon('pin') %> <%= brand.address %></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p class="footer-disclaimer"><%- icon('info') %> <strong>Educational software project</strong> — all balances and transactions are simulated; not a real bank. No real money is held, deposited or transferred, and Qorvexa holds no banking licence.</p>
+    <p>&copy; <%= year %> Qorvexa Digital Bank (fictional brand).</p>
+  </div>
+</footer>

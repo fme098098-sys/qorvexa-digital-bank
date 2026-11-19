@@ -1,0 +1,34 @@
+<section class="page-hero">
+  <div class="container">
+    <span class="eyebrow">About Qorvexa</span>
+    <h1>Digital banking software, built with care</h1>
+    <p class="lead">QORVEXA DIGITAL BANK is a full-stack software engineering project that models how a modern internet bank works — from customer onboarding to an auditable ledger.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="container two-col">
+    <div>
+      <h2>Our purpose</h2>
+      <p>Qorvexa was created as an academic project to demonstrate secure, maintainable and user-friendly banking software. It implements real authentication, a double-entry style transaction ledger, administrator oversight and audit logging, using a Node.js, Express and PostgreSQL stack.</p>
+      <p>Because Qorvexa is an educational platform, <strong>every balance and transaction is simulated</strong>. It is not a bank, holds no banking licence, offers no deposit insurance and cannot send or receive real money.</p>
+    </div>
+    <div class="card">
+      <h3>What's inside</h3>
+      <ul class="tick-list dark">
+        <li><%- icon('check') %> Customer registration, login and password recovery</li>
+        <li><%- icon('check') %> Atomic internal transfers with row-level locking</li>
+        <li><%- icon('check') %> Deposit requests reviewed by administrators</li>
+        <li><%- icon('check') %> PDF receipts and account statements</li>
+        <li><%- icon('check') %> Role-based admin console with immutable audit logs</li>
+        <li><%- icon('check') %> Responsive design for desktop, tablet and mobile</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<section class="section section-soft">
+  <div class="container values-grid">
+    <div class="value"><%- icon('shield') %><h4>Security first</h4><p>Defence in depth: hashing, CSRF tokens, rate limiting, strict input validation and parameterised queries.</p></div>
+    <div class="value"><%- icon('database') %><h4>Integrity</h4><p>Balances can only change through ledgered transactions — not even administrators can edit them directly.</p></div>
+    <div class="value"><%- icon('globe') %><h4>Accessible</h4><p>A clean, responsive interface designed for customers in any country, displayed in US dollars.</p></div>
+  </div>
+</section>
