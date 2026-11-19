@@ -1,0 +1,11 @@
+<% const _errs = (typeof list !== 'undefined' ? list : errors) || []; if (_errs.length) { %>
+  <div class="alert alert-error" role="alert">
+    <%- icon('alert') %>
+    <div>
+      <% if (_errs.length === 1) { %><span><%= _errs[0] %></span><% } else { %>
+        <strong>Please correct the following:</strong>
+        <ul><% _errs.forEach(function (e) { %><li><%= e %></li><% }) %></ul>
+      <% } %>
+    </div>
+  </div>
+<% } %>
