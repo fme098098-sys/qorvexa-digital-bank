@@ -1,0 +1,37 @@
+<section class="card">
+  <div class="card-head">
+    <div class="tabs">
+      <% ['pending','approved','rejected','all'].forEach(function (s) { %><a href="/admin/deposits?status=<%= s %>" class="<%= status === s ? 'active' : '' %>"><%= fmt.titleCase(s) %></a><% }) %>
+    </div>
+    <span class="muted"><%= result.total %> requests</span>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Requested</th><th>Reference</th><th>Customer</th><th>Method</th><th class="num">Amount</th><th>Status</th><th>Review</th></tr></thead>
+    <tbody>
+      <% result.rows.forEach(function (r) { %>
+        <tr>
+          <td class="nowrap small"><%= fmt.formatDate(r.created_at) %></td>
+          <td class="mono small"><%= r.reference %></td>
+          <td><a href="/admin/users/<%= r.user_id %>"><%= r.full_name %></a><small class="muted mono"><%= r.account_number %></small><% if (r.note) { %><small class="muted">“<%= r.note %>”</small><% } %></td>
+          <td><%= fmt.titleCase(r.method.replace('simulated_', '')) %></td>
+          <td class="num strong"><%= fmt.formatUSD(r.amount_cents) %></td>
+          <td><span class="status-pill status-<%= r.status %>"><%= fmt.titleCase(r.status) %></span></td>
+          <td>
+            <% if (r.status === 'pending') { %>
+              <form method="post" action="/admin/deposits/<%= r.id %>/review" class="review-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input name="note" maxlength="200" placeholder="Note (required to reject)">
+                <button class="btn btn-success btn-sm" name="decision" value="approve" type="submit" data-confirm-click="Approve and credit <%= fmt.formatUSD(r.amount_cents) %> to <%= r.full_name %>?"><%- icon('check') %> Approve</button>
+                <button class="btn btn-danger btn-sm" name="decision" value="reject" type="submit"><%- icon('x') %> Reject</button>
+              </form>
+            <% } else { %>
+              <small class="muted"><%= r.reviewer || 'system' %> · <%= fmt.formatDate(r.reviewed_at) %><% if (r.review_note) { %><br><%= r.review_note %><% } %></small>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (!result.rows.length) { %><tr><td colspan="7" class="center muted">No deposit requests in this view.</td></tr><% } %>
+    </tbody>
+  </table></div>
+  <%- include('../partials/pagination', { result: result, query: { status: status } }) %>
+</section>

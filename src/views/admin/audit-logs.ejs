@@ -1,0 +1,12 @@
+<section class="card">
+  <form method="get" action="/admin/audit-logs" class="filter-bar">
+    <label class="field grow"><span>Search</span><div class="input-group"><b><%- icon('search') %></b><input name="q" value="<%= q %>" placeholder="Action, actor, entity or details"></div></label>
+    <label class="field"><span>Actor</span><select name="actor"><option value="">All actors</option><% ['admin','user','system','guest'].forEach(function (a) { %><option value="<%= a %>" <%= actorType === a ? 'selected' : '' %>><%= fmt.titleCase(a) %></option><% }) %></select></label>
+    <div class="filter-actions"><button class="btn btn-primary" type="submit"><%- icon('search') %> Filter</button><a class="btn btn-ghost" href="/admin/audit-logs">Reset</a><a class="btn btn-ghost" href="/admin/audit-logs?actor=admin">Admin actions only</a></div>
+  </form>
+</section>
+<section class="card">
+  <div class="card-head"><h3>System activity &amp; audit log</h3><span class="muted"><%= result.total %> entries · append-only</span></div>
+  <%- include('_logs-table', { logs: result.rows }) %>
+  <%- include('../partials/pagination', { result: result, query: { q: q, actor: actorType } }) %>
+</section>

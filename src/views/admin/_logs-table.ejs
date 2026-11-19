@@ -1,0 +1,16 @@
+<div class="table-wrap"><table class="table compact">
+  <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Entity</th><th class="hide-sm">Details</th><th class="hide-sm">IP</th></tr></thead>
+  <tbody>
+    <% logs.forEach(function (l) { %>
+      <tr>
+        <td class="nowrap small"><%= fmt.formatDate(l.created_at) %></td>
+        <td><span class="actor-pill actor-<%= l.actor_type %>"><%= l.actor_type %></span> <%= l.actor_label || '' %></td>
+        <td class="mono small"><%= l.action %></td>
+        <td class="small"><%= l.entity_type || '' %> <span class="mono"><%= l.entity_id ? String(l.entity_id).slice(0, 20) : '' %></span></td>
+        <td class="hide-sm small mono details-cell"><%= JSON.stringify(l.details) === '{}' ? '' : JSON.stringify(l.details).slice(0, 160) %></td>
+        <td class="hide-sm small mono"><%= l.ip_address || '' %></td>
+      </tr>
+    <% }) %>
+    <% if (!logs.length) { %><tr><td colspan="6" class="muted center">No activity recorded.</td></tr><% } %>
+  </tbody>
+</table></div>

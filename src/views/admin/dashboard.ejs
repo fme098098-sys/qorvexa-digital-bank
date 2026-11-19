@@ -1,0 +1,48 @@
+<section class="stat-grid">
+  <div class="stat-card"><span class="stat-icon stat-gold"><%- icon('database') %></span><small>Total simulated funds</small><strong><%= fmt.formatUSD(totals.total_funds) %></strong><span class="muted">Sum of all account balances</span></div>
+  <div class="stat-card"><span class="stat-icon stat-green"><%- icon('deposit') %></span><small>Total deposits</small><strong><%= fmt.formatUSD(totals.total_deposits) %></strong><span class="muted"><%= totals.deposit_count %> approved deposits</span></div>
+  <div class="stat-card"><span class="stat-icon stat-red"><%- icon('withdraw') %></span><small>Total withdrawals</small><strong><%= fmt.formatUSD(totals.total_withdrawals) %></strong><span class="muted"><%= totals.withdrawal_count %> withdrawals</span></div>
+  <div class="stat-card"><span class="stat-icon stat-blue"><%- icon('repeat') %></span><small>Total transfers</small><strong><%= fmt.formatUSD(totals.total_transfers) %></strong><span class="muted"><%= totals.transfer_count %> internal transfers</span></div>
+</section>
+<section class="stat-grid">
+  <a class="stat-card link-card" href="/admin/users"><span class="stat-icon stat-blue"><%- icon('users') %></span><small>Registered customers</small><strong><%= overview.users.total %></strong><span class="muted"><%= overview.users.active %> active · <%= overview.users.suspended %> suspended</span></a>
+  <a class="stat-card link-card" href="/admin/users"><span class="stat-icon stat-gold"><%- icon('user-plus') %></span><small>New registrations</small><strong><%= overview.users.new_7d %> <em class="muted small">this week</em></strong><span class="muted"><%= overview.users.new_30d %> in the last 30 days</span></a>
+  <a class="stat-card link-card" href="/admin/deposits"><span class="stat-icon stat-green"><%- icon('clock') %></span><small>Pending deposit requests</small><strong><%= overview.pending.n %></strong><span class="muted"><%= fmt.formatUSD(overview.pending.amt) %> awaiting review</span></a>
+  <a class="stat-card link-card" href="/admin/support"><span class="stat-icon stat-red"><%- icon('support') %></span><small>Open support tickets</small><strong><%= overview.tickets.open %></strong><span class="muted">Open or in progress</span></a>
+</section>
+<section class="dash-grid">
+  <div class="card">
+    <div class="card-head"><h3>Transaction volume</h3><span class="muted">Last 14 days</span></div>
+    <div class="chart-box"><canvas data-chart="admin-volume" data-labels="<%= JSON.stringify(chart.labels) %>" data-deposits="<%= JSON.stringify(chart.deposits) %>" data-withdrawals="<%= JSON.stringify(chart.withdrawals) %>" data-transfers="<%= JSON.stringify(chart.transfers) %>"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>New registrations</h3><span class="muted">Last 14 days</span></div>
+    <div class="chart-box"><canvas data-chart="admin-registrations" data-labels="<%= JSON.stringify(chart.labels) %>" data-values="<%= JSON.stringify(chart.registrations) %>"></canvas></div>
+  </div>
+</section>
+<section class="dash-grid">
+  <div class="card">
+    <div class="card-head"><h3>Latest transactions</h3><% if (currentAdmin.role !== 'support') { %><a class="link" href="/admin/transactions">View all <%- icon('chevron') %></a><% } %></div>
+    <div class="table-wrap"><table class="table compact">
+      <thead><tr><th>Reference</th><th>Customer</th><th>Type</th><th class="num">Amount</th></tr></thead>
+      <tbody><% recentTx.forEach(function (t) { %>
+        <tr><td class="mono small"><% if (currentAdmin.role !== 'support') { %><a href="/admin/transactions/<%= t.reference %>"><%= t.reference %></a><% } else { %><%= t.reference %><% } %></td><td><%= t.owner_name %></td>
+          <td><span class="type-pill type-<%= t.type %>"><%= TYPE_LABELS[t.type] %></span></td>
+          <td class="num amount-<%= t.direction %>"><%= fmt.formatUSD(t.amount_cents) %></td></tr>
+      <% }) %></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Newest customers</h3><a class="link" href="/admin/users">All users <%- icon('chevron') %></a></div>
+    <ul class="mini-list">
+      <% overview.newest.forEach(function (u) { %>
+        <li><a href="/admin/users/<%= u.id %>"><span class="avatar sm"><%= u.full_name[0] %></span><span><strong><%= u.full_name %></strong><small class="muted"><%= u.email %> · <%= u.account_number %></small></span><small class="muted"><%= fmt.formatDate(u.created_at, false) %></small></a></li>
+      <% }) %>
+    </ul>
+  </div>
+</section>
+<% if (currentAdmin.role !== 'support') { %>
+<section class="card">
+  <div class="card-head"><h3>Recent system activity</h3><a class="link" href="/admin/audit-logs">Activity logs <%- icon('chevron') %></a></div>
+  <%- include('_logs-table', { logs: recentLogs }) %>
+</section>
+<% } %>
