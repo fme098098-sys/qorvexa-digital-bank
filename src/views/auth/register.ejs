@@ -1,0 +1,41 @@
+<h1 class="auth-title">Open your account</h1>
+<p class="auth-sub">It takes less than two minutes.</p>
+<%- include('../partials/notice') %>
+<% if (!registrationOpen) { %>
+  <div class="alert alert-info"><%- icon('info') %><span>Online registration is temporarily closed. Please contact support.</span></div>
+<% } else { %>
+<%- include('../partials/errors') %>
+<form method="post" action="/register" class="form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <label class="field"><span>Full name</span><input name="fullName" autocomplete="name" required maxlength="120" value="<%= form.fullName || '' %>"></label>
+  <div class="grid-2">
+    <label class="field"><span>Email address</span><input type="email" name="email" autocomplete="email" required maxlength="254" value="<%= form.email || '' %>"></label>
+    <label class="field"><span>Phone number</span><input type="tel" name="phone" autocomplete="tel" required maxlength="20" placeholder="+1 555 010 2040" value="<%= form.phone || '' %>"></label>
+  </div>
+  <div class="grid-2">
+    <label class="field"><span>Username</span><input name="username" autocomplete="username" required maxlength="32" pattern="[A-Za-z0-9_.]{3,32}" value="<%= form.username || '' %>"></label>
+    <label class="field"><span>Country</span>
+      <select name="country" required>
+        <option value="">Select country</option>
+        <% countries.forEach(function (c) { %><option value="<%= c %>" <%= form.country === c ? 'selected' : '' %>><%= c %></option><% }) %>
+      </select></label>
+  </div>
+  <div class="grid-2">
+    <label class="field"><span>Password</span><input type="password" name="password" autocomplete="new-password" required minlength="10" maxlength="128" data-strength></label>
+    <label class="field"><span>Confirm password</span><input type="password" name="confirmPassword" autocomplete="new-password" required maxlength="128"></label>
+  </div>
+  <div class="strength" aria-live="polite"><div class="strength-bar"><i></i></div><small>At least 10 characters with upper &amp; lowercase letters, a number and a symbol.</small></div>
+  <fieldset class="field">
+    <span>Account type</span>
+    <div class="choice-grid">
+      <% [['checking','Checking','Everyday spending and transfers'],['savings','Savings','Set money aside for your goals'],['business','Business','For sole traders and small firms']].forEach(function (t) { %>
+        <label class="choice"><input type="radio" name="accountType" value="<%= t[0] %>" <%= (form.accountType || 'checking') === t[0] ? 'checked' : '' %>>
+          <span><strong><%= t[1] %></strong><small><%= t[2] %></small></span></label>
+      <% }) %>
+    </div>
+  </fieldset>
+  <label class="check"><input type="checkbox" name="terms" value="1" <%= form.terms ? 'checked' : '' %>> <span>I understand Qorvexa is an educational software project and all balances and transactions are simulated.</span></label>
+  <button type="submit" class="btn btn-primary btn-block btn-lg"><%- icon('user-plus') %> Create account</button>
+</form>
+<% } %>
+<p class="auth-switch">Already have an account? <a href="/login">Sign in</a></p>

@@ -1,0 +1,32 @@
+<section class="card">
+  <form method="get" action="/admin/users" class="filter-bar">
+    <label class="field grow"><span>Search users</span><div class="input-group"><b><%- icon('search') %></b><input name="q" value="<%= q %>" placeholder="Name, email, username, account number or ID"></div></label>
+    <label class="field"><span>Status</span><select name="status"><option value="">All</option><option value="active" <%= status === 'active' ? 'selected' : '' %>>Active</option><option value="suspended" <%= status === 'suspended' ? 'selected' : '' %>>Suspended</option></select></label>
+    <div class="filter-actions">
+      <button class="btn btn-primary" type="submit"><%- icon('search') %> Search</button>
+      <a class="btn btn-ghost" href="/admin/users">Reset</a>
+      <% if (currentAdmin.role !== 'support') { %><a class="btn btn-gold" href="/admin/users/new"><%- icon('user-plus') %> Create customer</a><% } %>
+    </div>
+  </form>
+</section>
+<section class="card">
+  <div class="card-head"><h3>Registered customers</h3><span class="muted"><%= result.total %> found</span></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Customer</th><th>Account number</th><th class="hide-sm">Country</th><th class="num">Balance</th><th>Status</th><th class="hide-sm">Joined</th><th></th></tr></thead>
+    <tbody>
+      <% result.rows.forEach(function (u) { %>
+        <tr>
+          <td><strong><%= u.full_name %></strong><small class="muted"><%= u.email %> · @<%= u.username %></small></td>
+          <td class="mono"><%= u.account_number %><small class="muted"><%= fmt.titleCase(u.account_type) %> · <%= u.customer_id %></small></td>
+          <td class="hide-sm"><%= u.country %></td>
+          <td class="num"><%= fmt.formatUSD(u.balance_cents) %></td>
+          <td><span class="status-pill status-<%= u.status %>"><%= fmt.titleCase(u.status) %></span></td>
+          <td class="hide-sm nowrap small"><%= fmt.formatDate(u.created_at, false) %></td>
+          <td><a class="btn btn-ghost btn-sm" href="/admin/users/<%= u.id %>">View</a></td>
+        </tr>
+      <% }) %>
+      <% if (!result.rows.length) { %><tr><td colspan="7" class="center muted">No customers match your search.</td></tr><% } %>
+    </tbody>
+  </table></div>
+  <%- include('../partials/pagination', { result: result, query: { q: q, status: status } }) %>
+</section>

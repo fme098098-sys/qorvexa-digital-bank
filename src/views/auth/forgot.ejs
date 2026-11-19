@@ -1,0 +1,10 @@
+<h1 class="auth-title">Forgot your password?</h1>
+<p class="auth-sub">Enter the email address on your account and we'll send you a secure reset link valid for 30 minutes.</p>
+<%- include('../partials/errors') %>
+<form method="post" action="/forgot-password" class="form" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <label class="field"><span>Email address</span><input type="email" name="email" required maxlength="254" value="<%= form.email || '' %>" autofocus></label>
+  <button type="submit" class="btn btn-primary btn-block btn-lg"><%- icon('mail') %> Send reset link</button>
+</form>
+<p class="auth-switch"><a href="/login">&larr; Back to sign in</a></p>
+<%- include('../partials/notice') %>
