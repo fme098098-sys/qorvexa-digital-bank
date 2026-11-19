@@ -1,0 +1,8 @@
+<section class="section error-page">
+  <div class="container narrow center">
+    <div class="error-code"><%= status %></div>
+    <h1><%= status === 404 ? 'Page not found' : (status === 403 ? 'Access denied' : (status === 429 ? 'Slow down' : 'Something went wrong')) %></h1>
+    <p class="lead dark"><%= message %></p>
+    <a href="/" class="btn btn-primary">Back to home</a>
+  </div>
+</section>

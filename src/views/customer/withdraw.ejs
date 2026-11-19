@@ -1,0 +1,24 @@
+<div class="page-grid">
+  <section class="card">
+    <div class="card-head"><h3><%- icon('withdraw') %> Withdraw funds</h3><span class="muted">Available: <strong><%= fmt.formatUSD(account.balance_cents - account.hold_cents) %></strong></span></div>
+    <%- include('../partials/errors') %>
+    <form method="post" action="/withdraw" class="form" novalidate data-once>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="idempotencyKey" value="<%= idempotencyKey %>">
+      <label class="field"><span>Amount (USD)</span>
+        <div class="input-group money"><b>$</b><input name="amount" inputmode="decimal" required value="<%= form.amount || '' %>" placeholder="0.00"></div></label>
+      <label class="field"><span>Description <em class="muted">(optional)</em></span><input name="description" maxlength="140" value="<%= form.description || '' %>" placeholder="e.g. ATM cash"></label>
+      <label class="check"><input type="checkbox" name="confirm" value="on"> <span>I confirm this simulated withdrawal from account <strong class="mono"><%= account.account_number %></strong>.</span></label>
+      <button type="submit" class="btn btn-primary btn-lg"><%- icon('withdraw') %> Withdraw</button>
+    </form>
+  </section>
+  <aside class="card">
+    <h3>Withdrawal information</h3>
+    <ul class="tick-list dark">
+      <li><%- icon('check') %> Processed instantly from your available balance</li>
+      <li><%- icon('check') %> Daily limit: <%= fmt.formatUSD(limits.daily_withdrawal_limit_cents) %></li>
+      <li><%- icon('check') %> A receipt is generated for every withdrawal</li>
+    </ul>
+    <%- include('../partials/notice') %>
+  </aside>
+</div>

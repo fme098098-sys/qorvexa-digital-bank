@@ -1,0 +1,35 @@
+<div class="page-grid">
+  <section class="card">
+    <div class="card-head"><h3><%- icon('send') %> Transfer funds</h3><span class="muted">Available: <strong><%= fmt.formatUSD(account.balance_cents - account.hold_cents) %></strong></span></div>
+    <%- include('../partials/errors') %>
+    <form method="post" action="/transfer/review" class="form" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="field"><span>Recipient account number or username</span>
+        <div class="input-group">
+          <input name="recipient" id="recipient" required maxlength="32" value="<%= form.recipient || '' %>" placeholder="e.g. 4012345678 or daniel.mercer" autocomplete="off">
+          <button type="button" class="input-addon text" data-lookup="#recipient" data-target="#recipient-result">Verify</button>
+        </div>
+      </label>
+      <div id="recipient-result" class="lookup-result" aria-live="polite"></div>
+      <label class="field"><span>Amount (USD)</span>
+        <div class="input-group money"><b>$</b><input name="amount" inputmode="decimal" required value="<%= form.amount || '' %>" placeholder="0.00"></div></label>
+      <label class="field"><span>Transfer description</span><input name="description" required maxlength="140" value="<%= form.description || '' %>" placeholder="e.g. Rent for November"></label>
+      <label class="field"><span>Reference <em class="muted">(optional)</em></span><input name="reference" maxlength="40" value="<%= form.reference || '' %>" placeholder="e.g. INV-2041"></label>
+      <button type="submit" class="btn btn-primary btn-lg">Continue to review <%- icon('chevron') %></button>
+      <p class="hint"><%- icon('info') %> You'll confirm the recipient's name before any money moves. Single transfer limit <%= fmt.formatUSD(limits.max_single_transfer_cents) %> · daily limit <%= fmt.formatUSD(limits.daily_transfer_limit_cents) %>.</p>
+    </form>
+  </section>
+  <aside class="card">
+    <div class="card-head"><h3>Beneficiaries</h3><a href="/beneficiaries" class="link">Manage</a></div>
+    <% if (!beneficiaries.length) { %>
+      <div class="empty small"><%- icon('users') %><p>No saved beneficiaries yet.</p></div>
+    <% } else { %>
+      <ul class="ben-list">
+        <% beneficiaries.forEach(function (b) { %>
+          <li><a href="/transfer?to=<%= b.account_number %>"><span class="avatar sm"><%= b.full_name[0] %></span>
+            <span><strong><%= b.nickname || b.full_name %></strong><small class="mono"><%= b.account_number %></small></span><%- icon('chevron') %></a></li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </aside>
+</div>
